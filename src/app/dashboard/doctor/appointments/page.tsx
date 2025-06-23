@@ -67,7 +67,6 @@ export default function DoctorAppointmentsPage() {
             setAppointments(fetchedAppointments);
             
             const now = new Date();
-            now.setHours(0, 0, 0, 0);
             const upcoming = fetchedAppointments.filter(
                 appt => appt.appointmentDateTime.toDate() >= now && appt.status === 'booked'
             );
