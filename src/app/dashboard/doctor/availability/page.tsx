@@ -35,11 +35,27 @@ export default function DoctorAvailabilityPage() {
     const [availabilityLoading, setAvailabilityLoading] = useState(true);
     const [deletingSlotId, setDeletingSlotId] = useState<string | null>(null);
 
-    const timeSlots = [
+    const timeSlots = useMemo(() => [
         "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30",
         "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00",
-    ];
+    ], []);
     
+    const displayedTimeSlots = useMemo(() => {
+        const now = new Date();
+        const todayStr = format(now, 'yyyy-MM-dd');
+        // Check if today is one of the selected dates.
+        const isTodaySelected = dates.some(d => format(d, 'yyyy-MM-dd') === todayStr);
+
+        // If today is not selected, or no date is selected, show all slots.
+        if (!isTodaySelected) {
+            return timeSlots;
+        }
+
+        // If today is selected, filter for future time slots.
+        const currentTimeStr = format(now, 'HH:mm');
+        return timeSlots.filter(slot => slot > currentTimeStr);
+    }, [dates, timeSlots]);
+
     const fetchAvailability = useCallback(async () => {
         if (!user) return;
         setAvailabilityLoading(true);
@@ -175,7 +191,7 @@ export default function DoctorAvailabilityPage() {
                             mode="multiple"
                             selected={dates}
                             onSelect={(d) => setDates(d || [])}
-                            disabled={{ before: new Date(new Date().setDate(new Date().getDate() - 1)) }}
+                            disabled={{ before: new Date(new Date().setDate(new Date().getDate())) }}
                             className="rounded-md border"
                                 classNames={{
                                 day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
@@ -193,21 +209,27 @@ export default function DoctorAvailabilityPage() {
                         
                         {dates.length > 0 ? (
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {timeSlots.map(slot => (
-                                        <div key={slot} className="flex items-center space-x-2">
-                                            <Checkbox 
-                                                id={`slot-${slot}`} 
-                                                checked={selectedSlots.has(slot)}
-                                                onCheckedChange={() => handleSlotToggle(slot)}
-                                            />
-                                            <Label htmlFor={`slot-${slot}`}>{formatTime(slot)}</Label>
+                                {displayedTimeSlots.length > 0 ? (
+                                    <>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                            {displayedTimeSlots.map(slot => (
+                                                <div key={slot} className="flex items-center space-x-2">
+                                                    <Checkbox 
+                                                        id={`slot-${slot}`} 
+                                                        checked={selectedSlots.has(slot)}
+                                                        onCheckedChange={() => handleSlotToggle(slot)}
+                                                    />
+                                                    <Label htmlFor={`slot-${slot}`}>{formatTime(slot)}</Label>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
-                                <Button onClick={handleSaveAvailability} disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                                    {loading ? 'Saving...' : 'Save Availability'}
-                                </Button>
+                                        <Button onClick={handleSaveAvailability} disabled={loading || selectedSlots.size === 0} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                                            {loading ? 'Saving...' : 'Save Availability'}
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground text-center py-8">No future time slots available for today. Please select a future date to set availability.</p>
+                                )}
                             </div>
                         ) : (
                                 <p className="text-sm text-muted-foreground text-center py-8">Please select one or more dates from the calendar to set your available times.</p>

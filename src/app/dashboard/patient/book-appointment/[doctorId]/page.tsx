@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -74,14 +75,13 @@ export default function BookAppointmentPage() {
                     where('doctorId', '==', doctorId)
                 );
                 const availabilitySnapshot = await getDocs(availabilityQuery);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                const now = new Date();
 
                 const availableSlots = availabilitySnapshot.docs
                     .map(doc => ({ id: doc.id, ...doc.data() } as AvailabilitySlot))
                     .filter(slot => {
                         const slotDate = slot.date.toDate();
-                        return !slot.isBooked && slotDate >= today;
+                        return !slot.isBooked && slotDate > now;
                     });
                 
                 // Sort client-side
@@ -141,9 +141,7 @@ export default function BookAppointmentPage() {
                     throw new Error("This slot is no longer available. Please select another time.");
                 }
                 
-                const [hours, minutes] = selectedSlot.startTime.split(':').map(Number);
                 const appointmentDateTime = selectedSlot.date.toDate();
-                appointmentDateTime.setHours(hours, minutes, 0, 0);
 
                 transaction.update(availabilitySlotRef, {
                     isBooked: true,
@@ -171,6 +169,8 @@ export default function BookAppointmentPage() {
         } catch (error: any) {
             console.error("Booking failed:", error);
             toast({ title: "Booking Failed", description: error.message || "An error occurred during booking. Please try again.", variant: "destructive" });
+            setAvailability(prev => prev.filter(p => p.id !== selectedSlot.id)); // Optimistically remove booked slot
+            setSelectedSlot(null);
         } finally {
             setBooking(false);
         }
@@ -210,7 +210,7 @@ export default function BookAppointmentPage() {
                                 mode="single"
                                 selected={date}
                                 onSelect={(d) => { setDate(d); setSelectedSlot(null); }}
-                                disabled={(d) => !availableDates.some(ad => ad.getTime() === d.getTime()) || d < new Date(new Date().setHours(0,0,0,0))}
+                                disabled={(d) => !availableDates.some(ad => ad.getTime() === d.getTime())}
                                 modifiers={{ available: availableDates }}
                                 modifiersClassNames={{ available: 'bg-primary/20' }}
                                 className="rounded-md border"
@@ -253,7 +253,7 @@ export default function BookAppointmentPage() {
                     <CardContent className="space-y-4">
                         {doctor && <p><strong>Doctor:</strong> {doctor.name}</p>}
                         {selectedSlot && date ? (
-                            <p><strong>Time:</strong> {format(date, 'EEEE, MMMM d')} at {formatTime(selectedSlot.startTime)}</p>
+                            <p><strong>Time:</strong> {format(selectedSlot.date.toDate(), 'EEEE, MMMM d')} at {formatTime(selectedSlot.startTime)}</p>
                         ) : (
                             <p className="text-sm text-muted-foreground">Please select a date and time.</p>
                         )}
