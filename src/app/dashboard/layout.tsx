@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -36,6 +36,9 @@ import {
   CalendarPlus,
   Users
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { auth } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const patientNavItems = [
   { href: '/dashboard/patient', label: 'Dashboard', icon: LayoutDashboard },
@@ -59,14 +62,56 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isDoctor = pathname.startsWith('/dashboard/doctor');
+  const router = useRouter();
+  const { user, userProfile, loading } = useAuth();
+  
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !userProfile) {
+    return (
+        <div className="flex min-h-screen bg-background">
+            <div className="hidden md:flex flex-col w-64 border-r p-4 space-y-4 bg-card">
+                <Skeleton className="h-10 w-40" />
+                <div className="mt-8 space-y-2">
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+            </div>
+            <div className="flex-1 p-6">
+                <Skeleton className="h-12 w-1/2" />
+                <Skeleton className="mt-6 h-64 w-full" />
+            </div>
+        </div>
+    );
+  }
+
+  const isDoctor = userProfile.role === 'doctor';
   const navItems = isDoctor ? doctorNavItems : patientNavItems;
 
-  const user = {
-    name: isDoctor ? 'Dr. Jane Doe' : 'Alex Smith',
-    email: isDoctor ? 'dr.jane@mediconnect.com' : 'alex.s@email.com',
+  const handleLogout = async () => {
+    await auth.signOut();
+  };
+
+  const getInitials = (name: string) => {
+      if (!name) return '';
+      const names = name.split(' ');
+      if (names.length > 1) {
+          return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+  }
+
+  const userInfo = {
+    name: userProfile.displayName,
+    email: userProfile.email,
     avatar: 'https://placehold.co/100x100.png',
-    initials: isDoctor ? 'JD' : 'AS',
+    initials: getInitials(userProfile.displayName),
   };
 
   return (
@@ -102,12 +147,12 @@ export default function DashboardLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="justify-start gap-2 w-full px-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>{user.initials}</AvatarFallback>
+                    <AvatarImage src={userInfo.avatar} alt={userInfo.name} />
+                    <AvatarFallback>{userInfo.initials}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col items-start text-left overflow-hidden">
-                    <span className="font-medium text-sm truncate">{user.name}</span>
-                    <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                    <span className="font-medium text-sm truncate">{userInfo.name}</span>
+                    <span className="text-xs text-muted-foreground truncate">{userInfo.email}</span>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
@@ -125,11 +170,9 @@ export default function DashboardLayout({
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/">
+                <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
-                  </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
