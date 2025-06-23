@@ -89,64 +89,56 @@ export default function DoctorAvailabilityPage() {
 
 
     return (
-        <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Set Your Availability</CardTitle>
-                        <CardDescription>Select one or more dates on the calendar, then choose your available time slots.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Calendar
-                            mode="multiple"
-                            selected={dates}
-                            onSelect={(d) => setDates(d || [])}
-                            disabled={{ before: new Date() }}
-                            className="p-0"
-                             classNames={{
-                                day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
-                                day_today: "bg-primary/20 text-primary-foreground"
-                            }}
-                        />
-                    </CardContent>
-                </Card>
-            </div>
-            <div>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Available Time Slots</CardTitle>
-                        <CardDescription>
-                            {dates.length > 0 
-                                ? `For ${dates.length} selected date(s)`
-                                : 'Select a date to manage time slots'
-                            }
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {dates.length > 0 ? (
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {timeSlots.map(slot => (
-                                        <div key={slot} className="flex items-center space-x-2">
-                                            <Checkbox 
-                                                id={`slot-${slot}`} 
-                                                checked={selectedSlots.has(slot)}
-                                                onCheckedChange={() => handleSlotToggle(slot)}
-                                            />
-                                            <Label htmlFor={`slot-${slot}`}>{formatTime(slot)}</Label>
-                                        </div>
-                                    ))}
-                                </div>
-                                <Button onClick={handleSaveAvailability} disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                                    {loading ? 'Saving...' : 'Save Availability'}
-                                </Button>
+        <Card>
+            <CardHeader>
+                <CardTitle>Set Your Availability</CardTitle>
+                <CardDescription>Select one or more dates on the calendar, then choose your available time slots for those dates.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid md:grid-cols-2 gap-8 items-start">
+                <div className="flex justify-center">
+                    <Calendar
+                        mode="multiple"
+                        selected={dates}
+                        onSelect={(d) => setDates(d || [])}
+                        disabled={{ before: new Date() }}
+                        className="rounded-md border"
+                            classNames={{
+                            day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
+                            day_today: "bg-primary/20 text-primary-foreground"
+                        }}
+                    />
+                </div>
+                <div className="pt-2">
+                    <h3 className="text-lg font-semibold mb-4">
+                        {dates.length > 0 
+                            ? `Available Time Slots for ${dates.length} selected date(s)`
+                            : 'Select a date to manage time slots'
+                        }
+                    </h3>
+                    
+                    {dates.length > 0 ? (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {timeSlots.map(slot => (
+                                    <div key={slot} className="flex items-center space-x-2">
+                                        <Checkbox 
+                                            id={`slot-${slot}`} 
+                                            checked={selectedSlots.has(slot)}
+                                            onCheckedChange={() => handleSlotToggle(slot)}
+                                        />
+                                        <Label htmlFor={`slot-${slot}`}>{formatTime(slot)}</Label>
+                                    </div>
+                                ))}
                             </div>
-                        ) : (
-                             <p className="text-sm text-muted-foreground text-center py-8">Please select one or more dates from the calendar.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+                            <Button onClick={handleSaveAvailability} disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                                {loading ? 'Saving...' : 'Save Availability'}
+                            </Button>
+                        </div>
+                    ) : (
+                            <p className="text-sm text-muted-foreground text-center py-8">Please select one or more dates from the calendar to set your available times.</p>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
     )
 }

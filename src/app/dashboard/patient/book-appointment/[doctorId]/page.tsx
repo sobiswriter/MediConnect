@@ -203,19 +203,21 @@ export default function BookAppointmentPage() {
                     </CardHeader>
                     <CardContent>
                         <Label>Select a Date</Label>
-                        <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={(d) => { setDate(d); setSelectedSlot(null); }}
-                            disabled={(d) => !availableDates.some(ad => ad.getTime() === d.getTime()) || d < new Date(new Date().setHours(0,0,0,0))}
-                            modifiers={{ available: availableDates }}
-                            modifiersClassNames={{ available: 'bg-primary/20' }}
-                            className="p-0 mt-2 rounded-md border"
-                             classNames={{
-                                day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
-                                day_today: "bg-primary text-primary-foreground"
-                            }}
-                        />
+                        <div className="flex justify-center pt-2">
+                            <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={(d) => { setDate(d); setSelectedSlot(null); }}
+                                disabled={(d) => !availableDates.some(ad => ad.getTime() === d.getTime()) || d < new Date(new Date().setHours(0,0,0,0))}
+                                modifiers={{ available: availableDates }}
+                                modifiersClassNames={{ available: 'bg-primary/20' }}
+                                className="rounded-md border"
+                                classNames={{
+                                    day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
+                                    day_today: "bg-primary text-primary-foreground"
+                                }}
+                            />
+                        </div>
                     </CardContent>
                 </Card>
                 {date && (

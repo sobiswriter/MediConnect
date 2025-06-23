@@ -84,59 +84,49 @@ export default function DoctorAppointmentsPage() {
 
     if (loading) {
         return (
-            <div className="grid lg:grid-cols-3 gap-6">
-                 <div className="lg:col-span-2">
-                    <Card>
-                        <CardHeader><Skeleton className="h-8 w-3/5" /></CardHeader>
-                        <CardContent><Skeleton className="w-full h-[280px] rounded-md" /></CardContent>
-                    </Card>
-                 </div>
-                 <div>
-                    <Card>
-                        <CardHeader><Skeleton className="h-8 w-4/5" /></CardHeader>
-                        <CardContent className="space-y-4">
-                            <Skeleton className="h-16 w-full" />
-                            <Skeleton className="h-16 w-full" />
-                            <Skeleton className="h-16 w-full" />
-                        </CardContent>
-                    </Card>
-                 </div>
-            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-3/5" />
+                    <Skeleton className="h-4 w-4/5" />
+                </CardHeader>
+                <CardContent className="grid md:grid-cols-2 gap-8">
+                    <Skeleton className="w-full h-[280px] rounded-md" />
+                    <div className="space-y-4">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
         )
     }
 
     return (
-        <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Appointments Calendar</CardTitle>
-                        <CardDescription>Select a date to see your schedule.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={setDate}
-                            modifiers={{ appointments: appointmentDates }}
-                            modifiersClassNames={{ appointments: 'bg-primary/20' }}
-                            className="p-0"
-                            classNames={{
-                                day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
-                                day_today: "bg-primary text-primary-foreground"
-                            }}
-                        />
-                    </CardContent>
-                </Card>
-            </div>
-            <div>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>
-                            Schedule for {date ? date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Today'}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+        <Card>
+            <CardHeader>
+                <CardTitle>Appointments Calendar</CardTitle>
+                <CardDescription>Select a date to view and manage your schedule for that day.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid md:grid-cols-2 gap-8 items-start">
+                <div className="flex justify-center">
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        modifiers={{ appointments: appointmentDates }}
+                        modifiersClassNames={{ appointments: 'bg-primary/20' }}
+                        className="rounded-md border"
+                        classNames={{
+                            day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
+                            day_today: "bg-primary text-primary-foreground"
+                        }}
+                    />
+                </div>
+                <div className="pt-2">
+                    <h3 className="text-lg font-semibold mb-4">
+                        Schedule for {date ? date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Today'}
+                    </h3>
+                    <div className="space-y-4">
                         {selectedAppointments.length > 0 ? selectedAppointments.map((appt) => (
                              <div key={appt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                                 <div className="flex items-center gap-3">
@@ -154,9 +144,9 @@ export default function DoctorAppointmentsPage() {
                         )) : (
                             <p className="text-sm text-muted-foreground text-center py-8">No appointments scheduled for this day.</p>
                         )}
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
     )
 }

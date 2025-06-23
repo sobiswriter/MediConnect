@@ -69,72 +69,64 @@ export default function PatientAppointmentsPage() {
 
     if (loading) {
         return (
-             <div className="grid md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
-                    <Card>
-                        <CardHeader><Skeleton className="h-8 w-1/3" /></CardHeader>
-                        <CardContent><Skeleton className="h-72 w-full" /></CardContent>
-                    </Card>
-                </div>
-                <div>
-                    <Card>
-                        <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
-                        <CardContent className="space-y-4">
-                            <Skeleton className="h-20 w-full" />
-                            <Skeleton className="h-20 w-full" />
-                        </CardContent>
-                    </Card>
-                </div>
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader><Skeleton className="h-8 w-1/3" /></CardHeader>
+                    <CardContent><Skeleton className="h-72 w-full" /></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
+                    <CardContent className="space-y-4">
+                        <Skeleton className="h-20 w-full" />
+                        <Skeleton className="h-20 w-full" />
+                    </CardContent>
+                </Card>
             </div>
         )
     }
 
     return (
-        <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>My Appointments</CardTitle>
-                        <CardDescription>Your upcoming and past appointments.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Calendar
-                            mode="multiple"
-                            selected={appointmentDates}
-                            defaultMonth={new Date()}
-                            className="p-0"
-                            classNames={{
-                                day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
-                                day_today: "bg-primary/20 text-primary-foreground"
-                            }}
-                        />
-                    </CardContent>
-                </Card>
-            </div>
-             <div>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Upcoming</CardTitle>
-                         <CardDescription>You have {upcomingAppointments.length} upcoming appointments.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {upcomingAppointments.length > 0 ? (
-                            upcomingAppointments.map(appt => (
-                                <div key={appt.id} className="p-3 bg-muted rounded-lg">
-                                    <p className="font-semibold">{appt.doctorName}</p>
-                                    <p className="text-sm text-muted-foreground">{appt.doctorSpecialty}</p>
-                                    <p className="text-sm font-medium mt-1">
-                                        {appt.appointmentDateTime.toDate().toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                    <Badge variant={appt.type === 'Online' ? 'default' : 'secondary'} className={`mt-2 ${appt.type === 'Online' ? 'bg-accent text-accent-foreground' : ''}`}>{appt.type}</Badge>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-sm text-muted-foreground text-center py-8">No upcoming appointments.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>My Appointments</CardTitle>
+                    <CardDescription>Your upcoming and past appointments are highlighted on the calendar.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                    <Calendar
+                        mode="multiple"
+                        selected={appointmentDates}
+                        defaultMonth={new Date()}
+                        className="rounded-md border"
+                        classNames={{
+                            day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
+                            day_today: "bg-primary/20 text-primary-foreground"
+                        }}
+                    />
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Upcoming</CardTitle>
+                     <CardDescription>You have {upcomingAppointments.length} upcoming appointments.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {upcomingAppointments.length > 0 ? (
+                        upcomingAppointments.map(appt => (
+                            <div key={appt.id} className="p-3 bg-muted rounded-lg">
+                                <p className="font-semibold">{appt.doctorName}</p>
+                                <p className="text-sm text-muted-foreground">{appt.doctorSpecialty}</p>
+                                <p className="text-sm font-medium mt-1">
+                                    {appt.appointmentDateTime.toDate().toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                                <Badge variant={appt.type === 'Online' ? 'default' : 'secondary'} className={`mt-2 ${appt.type === 'Online' ? 'bg-accent text-accent-foreground' : ''}`}>{appt.type}</Badge>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-8">No upcoming appointments.</p>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     )
 }
