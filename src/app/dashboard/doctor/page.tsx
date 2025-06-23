@@ -1,28 +1,134 @@
 'use client'
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Video } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface Appointment {
+    id: string;
+    patientId: string;
+    patientName?: string;
+    patientInitials?: string;
+    appointmentDateTime: Timestamp;
+    type: string;
+}
 
 export default function DoctorDashboardPage() {
-    const chartData = [
-        { month: 'Jan', appointments: 45 },
-        { month: 'Feb', appointments: 62 },
-        { month: 'Mar', appointments: 78 },
-        { month: 'Apr', appointments: 70 },
-        { month: 'May', appointments: 85 },
-        { month: 'Jun', appointments: 92 },
-    ];
-    const upcomingAppointments = [
-        { patient: 'Alex Smith', time: '10:30 AM', type: 'Online', avatar: 'https://placehold.co/100x100.png', initials: 'AS' },
-        { patient: 'Maria Garcia', time: '11:00 AM', type: 'In-Person', avatar: 'https://placehold.co/100x100.png', initials: 'MG' },
-        { patient: 'Chen Wei', time: '2:30 PM', type: 'Online', avatar: 'https://placehold.co/100x100.png', initials: 'CW' },
-    ];
+    const { user, userProfile } = useAuth();
+    const [stats, setStats] = useState({ totalAppointments: 0, newPatients: 0 });
+    const [chartData, setChartData] = useState<any[]>([]);
+    const [todaysAppointments, setTodaysAppointments] = useState<Appointment[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                // Fetch appointments for stats and list
+                const now = new Date();
+                const startOfCurrentMonth = startOfMonth(now);
+                const todayStart = new Date(now.setHours(0, 0, 0, 0));
+                const todayEnd = new Date(now.setHours(23, 59, 59, 999));
+
+                const appointmentsQuery = query(
+                    collection(db, 'appointments'), 
+                    where('doctorId', '==', user.uid),
+                    orderBy('appointmentDateTime', 'asc')
+                );
+                const querySnapshot = await getDocs(appointmentsQuery);
+                const allAppointments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+
+                const patientIds = new Set<string>();
+                const appointmentsThisMonth = allAppointments.filter(appt => {
+                    const apptDate = appt.appointmentDateTime.toDate();
+                    if (apptDate >= startOfCurrentMonth) {
+                        patientIds.add(appt.patientId);
+                        return true;
+                    }
+                    return false;
+                });
+                
+                const todaysAppts = allAppointments.filter(appt => {
+                    const apptDate = appt.appointmentDateTime.toDate();
+                    return apptDate >= todayStart && apptDate <= todayEnd;
+                });
+
+                const populatedTodaysAppointments = await Promise.all(
+                    todaysAppts.map(async (appt) => {
+                        const userDoc = await getDoc(doc(db, 'users', appt.patientId));
+                        const patientName = userDoc.exists() ? userDoc.data().displayName : 'Unknown';
+                        const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+                        return { ...appt, patientName, patientInitials: getInitials(patientName) };
+                    })
+                );
+
+                setTodaysAppointments(populatedTodaysAppointments);
+                setStats({ totalAppointments: appointmentsThisMonth.length, newPatients: patientIds.size });
+
+                // Fetch data for chart (last 6 months)
+                const monthlyData: { [key: string]: number } = {};
+                for (let i = 5; i >= 0; i--) {
+                    const monthDate = subMonths(now, i);
+                    const monthName = format(monthDate, 'MMM');
+                    monthlyData[monthName] = 0;
+                }
+
+                allAppointments.forEach(appt => {
+                    const apptDate = appt.appointmentDateTime.toDate();
+                    if (apptDate >= subMonths(now, 6)) {
+                        const monthName = format(apptDate, 'MMM');
+                        if (monthlyData[monthName] !== undefined) {
+                            monthlyData[monthName]++;
+                        }
+                    }
+                });
+
+                const chartResult = Object.keys(monthlyData).map(month => ({
+                    month,
+                    appointments: monthlyData[month]
+                }));
+                setChartData(chartResult);
+
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [user]);
+    
+    const nextAppointment = todaysAppointments[0];
+
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <Skeleton className="h-9 w-1/2" />
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <Card><CardHeader><Skeleton className="h-5 w-3/4" /></CardHeader><CardContent><Skeleton className="h-8 w-1/4" /></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-5 w-3/4" /></CardHeader><CardContent><Skeleton className="h-8 w-1/4" /></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-5 w-3/4" /></CardHeader><CardContent><Skeleton className="h-8 w-1/4" /></CardContent></Card>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent><Skeleton className="h-[250px] w-full" /></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></CardContent></Card>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">
-            <h2 className="text-3xl font-bold tracking-tight font-headline">Welcome back, Dr. Doe!</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-headline">Welcome back, {userProfile?.displayName || 'Doctor'}!</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -30,8 +136,7 @@ export default function DoctorDashboardPage() {
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">92</div>
-                        <p className="text-xs text-muted-foreground">+15% from last month</p>
+                        <div className="text-2xl font-bold">{stats.totalAppointments}</div>
                     </CardContent>
                 </Card>
                  <Card>
@@ -40,8 +145,7 @@ export default function DoctorDashboardPage() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">+12</div>
-                        <p className="text-xs text-muted-foreground">+8.2% from last month</p>
+                        <div className="text-2xl font-bold">+{stats.newPatients}</div>
                     </CardContent>
                 </Card>
                  <Card>
@@ -50,8 +154,14 @@ export default function DoctorDashboardPage() {
                         <Video className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">10:30 AM</div>
-                        <p className="text-xs text-muted-foreground">with Alex Smith (Online)</p>
+                        {nextAppointment ? (
+                            <>
+                                <div className="text-2xl font-bold">{nextAppointment.appointmentDateTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                <p className="text-xs text-muted-foreground">with {nextAppointment.patientName} ({nextAppointment.type})</p>
+                            </>
+                        ) : (
+                             <p className="text-sm text-muted-foreground pt-2">No more appointments today.</p>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -76,25 +186,27 @@ export default function DoctorDashboardPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Today's Schedule</CardTitle>
-                        <CardDescription>You have {upcomingAppointments.length} appointments today.</CardDescription>
+                        <CardDescription>You have {todaysAppointments.length} appointments today.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {upcomingAppointments.map((appt, index) => (
-                                <div key={index} className="flex items-center justify-between">
+                            {todaysAppointments.length > 0 ? todaysAppointments.map((appt) => (
+                                <div key={appt.id} className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <Avatar>
-                                            <AvatarImage src={appt.avatar} alt={appt.patient} />
-                                            <AvatarFallback>{appt.initials}</AvatarFallback>
+                                            <AvatarImage src={'https://placehold.co/100x100.png'} alt={appt.patientName} />
+                                            <AvatarFallback>{appt.patientInitials}</AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <p className="font-semibold">{appt.patient}</p>
-                                            <p className="text-sm text-muted-foreground">{appt.time}</p>
+                                            <p className="font-semibold">{appt.patientName}</p>
+                                            <p className="text-sm text-muted-foreground">{appt.appointmentDateTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>
                                     </div>
                                     <Badge variant={appt.type === 'Online' ? 'default' : 'secondary'} className={appt.type === 'Online' ? 'bg-accent text-accent-foreground' : ''}>{appt.type}</Badge>
                                 </div>
-                            ))}
+                            )) : (
+                                <p className="text-center text-sm text-muted-foreground py-4">No appointments scheduled for today.</p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

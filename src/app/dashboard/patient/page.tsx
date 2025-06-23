@@ -1,56 +1,136 @@
+'use client';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowRight, PlusCircle, Video } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { formatDistanceToNow } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface Appointment {
+  id: string;
+  doctor: string;
+  specialty: string;
+  date: string;
+  type: 'Online' | 'In-Person';
+  avatar: string;
+  initials: string;
+  isJoinable: boolean;
+}
 
 export default function PatientDashboardPage() {
-  const upcomingAppointments = [
-    {
-      doctor: 'Dr. Evelyn Reed',
-      specialty: 'Cardiologist',
-      date: 'Tomorrow, 10:30 AM',
-      type: 'Online',
-      avatar: 'https://placehold.co/100x100.png',
-      initials: 'ER'
-    },
-    {
-      doctor: 'Dr. Samuel Chen',
-      specialty: 'Dermatologist',
-      date: 'June 28, 2024, 2:00 PM',
-      type: 'In-Person',
-      avatar: 'https://placehold.co/100x100.png',
-      initials: 'SC'
-    },
-  ];
+  const { user, userProfile } = useAuth();
+  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchAppointments = async () => {
+        setLoading(true);
+        try {
+            const now = new Date();
+            const q = query(
+                collection(db, 'appointments'),
+                where('patientId', '==', user.uid),
+                where('appointmentDateTime', '>=', Timestamp.fromDate(now)),
+                orderBy('appointmentDateTime', 'asc'),
+                limit(5)
+            );
+            const querySnapshot = await getDocs(q);
+
+            const appointmentsData = await Promise.all(querySnapshot.docs.map(async (appointmentDoc) => {
+                const data = appointmentDoc.data();
+                const doctorProfileSnap = await getDoc(doc(db, 'doctorProfiles', data.doctorId));
+                const doctorData = doctorProfileSnap.exists() ? doctorProfileSnap.data() : { name: 'Dr. Unknown', specialty: 'N/A' };
+                
+                const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '';
+                const appointmentDate = data.appointmentDateTime.toDate();
+                const diffMinutes = (appointmentDate.getTime() - now.getTime()) / (1000 * 60);
+
+                return {
+                    id: appointmentDoc.id,
+                    doctor: doctorData.name,
+                    specialty: doctorData.specialty,
+                    date: formatDistanceToNow(appointmentDate, { addSuffix: true }),
+                    fullDate: appointmentDate,
+                    type: data.type || 'Online',
+                    avatar: 'https://placehold.co/100x100.png',
+                    initials: getInitials(doctorData.name),
+                    isJoinable: diffMinutes <= 15 && diffMinutes >= -15 && data.type === 'Online',
+                };
+            }));
+            setUpcomingAppointments(appointmentsData);
+        } catch (error) {
+            console.error("Error fetching appointments: ", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchAppointments();
+  }, [user]);
+
+  const nextAppointment = upcomingAppointments[0];
+  
+  if (loading) {
+    return (
+        <div className="space-y-6">
+            <Skeleton className="h-9 w-1/2" />
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
+            </div>
+            <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></CardContent></Card>
+        </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight font-headline">Welcome back, Alex!</h2>
+      <h2 className="text-3xl font-bold tracking-tight font-headline">Welcome back, {userProfile?.displayName || 'User'}!</h2>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="bg-primary/20 border-primary">
-          <CardHeader>
-            <CardTitle>Next Appointment</CardTitle>
-            <CardDescription>You have an upcoming appointment soon.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={upcomingAppointments[0].avatar} alt={upcomingAppointments[0].doctor} />
-                <AvatarFallback>{upcomingAppointments[0].initials}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold">{upcomingAppointments[0].doctor}</p>
-                <p className="text-sm text-muted-foreground">{upcomingAppointments[0].specialty}</p>
-                <p className="text-sm font-medium">{upcomingAppointments[0].date}</p>
-              </div>
-            </div>
-            <Button className="w-full mt-4 bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Video className="mr-2 h-4 w-4" /> Join Video Call
-            </Button>
-          </CardContent>
-        </Card>
+        {nextAppointment ? (
+            <Card className="bg-primary/20 border-primary">
+            <CardHeader>
+                <CardTitle>Next Appointment</CardTitle>
+                <CardDescription>You have an upcoming appointment soon.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12">
+                    <AvatarImage src={nextAppointment.avatar} alt={nextAppointment.doctor} />
+                    <AvatarFallback>{nextAppointment.initials}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <p className="font-semibold">{nextAppointment.doctor}</p>
+                    <p className="text-sm text-muted-foreground">{nextAppointment.specialty}</p>
+                    <p className="text-sm font-medium">{nextAppointment.date}</p>
+                </div>
+                </div>
+                <Button className="w-full mt-4 bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!nextAppointment.isJoinable}>
+                    <Video className="mr-2 h-4 w-4" /> Join Video Call
+                </Button>
+            </CardContent>
+            </Card>
+        ) : (
+            <Card className="bg-primary/20 border-primary">
+                <CardHeader>
+                    <CardTitle>No Upcoming Appointments</CardTitle>
+                    <CardDescription>Your schedule is clear.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Ready to book your next check-up or consultation?
+                    </p>
+                </CardContent>
+            </Card>
+        )}
         <Card>
           <CardHeader>
             <CardTitle>Book a New Appointment</CardTitle>
@@ -73,7 +153,7 @@ export default function PatientDashboardPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div >
             <CardTitle>Upcoming Appointments</CardTitle>
-            <CardDescription>Here are your scheduled appointments.</CardDescription>
+            <CardDescription>Here are your next scheduled appointments.</CardDescription>
           </div>
           <Button asChild variant="ghost">
             <Link href="/dashboard/patient/appointments">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
@@ -81,24 +161,28 @@ export default function PatientDashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {upcomingAppointments.map((appt, index) => (
-              <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
-                <div className="flex items-center gap-4">
-                  <Avatar>
-                    <AvatarImage src={appt.avatar} alt={appt.doctor} />
-                    <AvatarFallback>{appt.initials}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold">{appt.doctor}</p>
-                    <p className="text-sm text-muted-foreground">{appt.specialty}</p>
-                  </div>
+            {upcomingAppointments.length > 0 ? (
+                upcomingAppointments.map((appt) => (
+                <div key={appt.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
+                    <div className="flex items-center gap-4">
+                    <Avatar>
+                        <AvatarImage src={appt.avatar} alt={appt.doctor} />
+                        <AvatarFallback>{appt.initials}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="font-semibold">{appt.doctor}</p>
+                        <p className="text-sm text-muted-foreground">{appt.specialty}</p>
+                    </div>
+                    </div>
+                    <div className="text-right">
+                    <p className="text-sm font-medium">{appt.date}</p>
+                    <p className={`text-xs font-semibold ${appt.type === 'Online' ? 'text-accent-foreground' : 'text-blue-600'}`}>{appt.type}</p>
+                    </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">{appt.date}</p>
-                  <p className={`text-xs font-semibold ${appt.type === 'Online' ? 'text-accent-foreground' : 'text-blue-600'}`}>{appt.type}</p>
-                </div>
-              </div>
-            ))}
+                ))
+            ) : (
+                <p className="text-center text-sm text-muted-foreground py-4">No upcoming appointments found.</p>
+            )}
           </div>
         </CardContent>
       </Card>

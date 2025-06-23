@@ -1,19 +1,92 @@
 'use client';
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { add, format } from "date-fns";
 
 export default function DoctorAvailabilityPage() {
-    const [dates, setDates] = React.useState<Date[]>([]);
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [dates, setDates] = useState<Date[]>([]);
+    const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
+    const [loading, setLoading] = useState(false);
 
     const timeSlots = [
-        "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-        "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM"
+        "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30",
+        "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00",
     ];
+
+    const handleSlotToggle = (slot: string) => {
+        const newSelectedSlots = new Set(selectedSlots);
+        if (newSelectedSlots.has(slot)) {
+            newSelectedSlots.delete(slot);
+        } else {
+            newSelectedSlots.add(slot);
+        }
+        setSelectedSlots(newSelectedSlots);
+    };
+
+    const handleSaveAvailability = async () => {
+        if (!user || dates.length === 0 || selectedSlots.size === 0) {
+            toast({ title: 'Error', description: 'Please select at least one date and one time slot.', variant: 'destructive' });
+            return;
+        }
+
+        setLoading(true);
+        const availabilityBatch: Promise<any>[] = [];
+        const availabilityCollection = collection(db, 'doctorAvailability');
+        const durationMinutes = 30; // Assuming 30-minute slots
+
+        dates.forEach(date => {
+            selectedSlots.forEach(slot => {
+                const [hours, minutes] = slot.split(':').map(Number);
+                const startTime = new Date(date);
+                startTime.setHours(hours, minutes, 0, 0);
+
+                const endTime = add(startTime, { minutes: durationMinutes });
+
+                const newSlot = {
+                    doctorId: user.uid,
+                    date: Timestamp.fromDate(date),
+                    startTime: format(startTime, "HH:mm"),
+                    endTime: format(endTime, "HH:mm"),
+                    isBooked: false,
+                    bookedByPatientId: null,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                };
+                availabilityBatch.push(addDoc(availabilityCollection, newSlot));
+            });
+        });
+
+        try {
+            await Promise.all(availabilityBatch);
+            toast({ title: 'Success', description: 'Your availability has been updated.' });
+            setDates([]);
+            setSelectedSlots(new Set());
+        } catch (error) {
+            console.error("Error saving availability: ", error);
+            toast({ title: 'Error', description: 'Failed to save availability.', variant: 'destructive' });
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const formatTime = (time: string) => {
+        const [hour, minute] = time.split(':');
+        const h = parseInt(hour);
+        const suffix = h >= 12 ? 'PM' : 'AM';
+        const formattedHour = ((h + 11) % 12 + 1);
+        return `${formattedHour}:${minute} ${suffix}`;
+    }
+
 
     return (
         <div className="grid lg:grid-cols-3 gap-6">
@@ -21,13 +94,14 @@ export default function DoctorAvailabilityPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Set Your Availability</CardTitle>
-                        <CardDescription>Select dates on the calendar to manage available time slots.</CardDescription>
+                        <CardDescription>Select one or more dates on the calendar, then choose your available time slots.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Calendar
                             mode="multiple"
                             selected={dates}
                             onSelect={(d) => setDates(d || [])}
+                            disabled={{ before: new Date() }}
                             className="p-0"
                              classNames={{
                                 day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
@@ -44,30 +118,28 @@ export default function DoctorAvailabilityPage() {
                         <CardDescription>
                             {dates.length > 0 
                                 ? `For ${dates.length} selected date(s)`
-                                : 'Select a date to see time slots'
+                                : 'Select a date to manage time slots'
                             }
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {dates.length > 0 ? (
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     {timeSlots.map(slot => (
                                         <div key={slot} className="flex items-center space-x-2">
-                                            <Checkbox id={`slot-${slot.replace(/\s/g, '-')}`} />
-                                            <Label htmlFor={`slot-${slot.replace(/\s/g, '-')}`}>{slot}</Label>
+                                            <Checkbox 
+                                                id={`slot-${slot}`} 
+                                                checked={selectedSlots.has(slot)}
+                                                onCheckedChange={() => handleSlotToggle(slot)}
+                                            />
+                                            <Label htmlFor={`slot-${slot}`}>{formatTime(slot)}</Label>
                                         </div>
                                     ))}
                                 </div>
-                                 <div className="border-t pt-4">
-                                    <Label>Or set recurring weekly availability</Label>
-                                    <div className="flex gap-2 mt-2">
-                                        <Input type="time" defaultValue="09:00" />
-                                        <Input type="time" defaultValue="17:00" />
-                                    </div>
-                                    <Button variant="secondary" className="w-full mt-2">Apply to all selected weekdays</Button>
-                                </div>
-                                <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Save Availability</Button>
+                                <Button onClick={handleSaveAvailability} disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                                    {loading ? 'Saving...' : 'Save Availability'}
+                                </Button>
                             </div>
                         ) : (
                              <p className="text-sm text-muted-foreground text-center py-8">Please select one or more dates from the calendar.</p>
