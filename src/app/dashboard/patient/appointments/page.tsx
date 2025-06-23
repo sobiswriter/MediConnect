@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
@@ -27,10 +27,10 @@ export default function PatientAppointmentsPage() {
         const fetchAppointments = async () => {
             setLoading(true);
             try {
+                // Simplified query to avoid composite index, sorting is done client-side
                 const q = query(
                     collection(db, 'appointments'),
-                    where('patientId', '==', user.uid),
-                    orderBy('appointmentDateTime', 'desc')
+                    where('patientId', '==', user.uid)
                 );
                 const querySnapshot = await getDocs(q);
 
@@ -49,6 +49,10 @@ export default function PatientAppointmentsPage() {
                         type: appointmentData.type || 'Online',
                     } as Appointment;
                 }));
+
+                // Sort client-side since orderBy was removed from the query
+                fetchedAppointments.sort((a, b) => b.appointmentDateTime.toMillis() - a.appointmentDateTime.toMillis());
+
                 setAppointments(fetchedAppointments);
             } catch (error) {
                 console.error("Error fetching appointments:", error);

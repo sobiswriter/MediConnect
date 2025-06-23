@@ -7,7 +7,7 @@ import { ArrowRight, PlusCircle, Video } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, limit, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -16,6 +16,7 @@ interface Appointment {
   doctor: string;
   specialty: string;
   date: string;
+  fullDate: Date;
   type: 'Online' | 'In-Person';
   avatar: string;
   initials: string;
@@ -34,36 +35,47 @@ export default function PatientDashboardPage() {
         setLoading(true);
         try {
             const now = new Date();
+            // Simplified query to avoid composite index, filtering and sorting is done client-side
             const q = query(
                 collection(db, 'appointments'),
-                where('patientId', '==', user.uid),
-                where('appointmentDateTime', '>=', Timestamp.fromDate(now)),
-                orderBy('appointmentDateTime', 'asc'),
-                limit(5)
+                where('patientId', '==', user.uid)
             );
             const querySnapshot = await getDocs(q);
 
-            const appointmentsData = await Promise.all(querySnapshot.docs.map(async (appointmentDoc) => {
+            const allAppointments = await Promise.all(querySnapshot.docs.map(async (appointmentDoc) => {
                 const data = appointmentDoc.data();
                 const doctorProfileSnap = await getDoc(doc(db, 'doctorProfiles', data.doctorId));
                 const doctorData = doctorProfileSnap.exists() ? doctorProfileSnap.data() : { name: 'Dr. Unknown', specialty: 'N/A' };
                 
                 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '';
                 const appointmentDate = data.appointmentDateTime.toDate();
-                const diffMinutes = (appointmentDate.getTime() - now.getTime()) / (1000 * 60);
 
                 return {
                     id: appointmentDoc.id,
                     doctor: doctorData.name,
                     specialty: doctorData.specialty,
-                    date: formatDistanceToNow(appointmentDate, { addSuffix: true }),
+                    date: '', // Will be recalculated
                     fullDate: appointmentDate,
                     type: data.type || 'Online',
                     avatar: 'https://placehold.co/100x100.png',
                     initials: getInitials(doctorData.name),
-                    isJoinable: diffMinutes <= 15 && diffMinutes >= -15 && data.type === 'Online',
+                    isJoinable: false, // will be recalculated
                 };
             }));
+            
+            const appointmentsData = allAppointments
+                .filter(appt => appt.fullDate >= now) // Filter for upcoming appointments
+                .sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime()) // Sort by date ascending
+                .map(appt => {
+                    const diffMinutes = (appt.fullDate.getTime() - now.getTime()) / (1000 * 60);
+                    return {
+                        ...appt,
+                        date: formatDistanceToNow(appt.fullDate, { addSuffix: true }),
+                        isJoinable: diffMinutes <= 15 && diffMinutes >= -15 && appt.type === 'Online',
+                    };
+                })
+                .slice(0, 5); // Get the next 5
+
             setUpcomingAppointments(appointmentsData);
         } catch (error) {
             console.error("Error fetching appointments: ", error);
