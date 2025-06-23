@@ -103,7 +103,7 @@ export default function PatientAppointmentsPage() {
             });
 
             toast({ title: "Success", description: "Appointment cancelled successfully." });
-            setAppointments(prev => prev.map(a => a.id === appointmentId ? { ...a, status: 'cancelled' } : a));
+            await fetchAppointments();
         } catch (error: any) {
             console.error("Error cancelling appointment: ", error);
             toast({ title: "Cancellation Failed", description: error.message, variant: "destructive" });
