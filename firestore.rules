@@ -1,0 +1,135 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function allowedUserFieldsUpdate(originalData, incomingData) {
+      return incomingData.uid == originalData.uid &&
+             incomingData.email == originalData.email &&
+             incomingData.role == originalData.role &&
+             // Ensure createdAt is not modifiable after creation
+             (originalData.createdAt == null || request.resource.data.createdAt.toMillis() == originalData.createdAt.toMillis());
+    }
+    
+    function allowedDoctorProfileFieldsUpdate(originalData, incomingData) {
+      return incomingData.doctorId == originalData.doctorId &&
+             (originalData.createdAt == null || request.resource.data.createdAt.toMillis() == originalData.createdAt.toMillis());
+    }
+
+    function allowedPatientProfileFieldsUpdate(originalData, incomingData) {
+      return incomingData.patientId == originalData.patientId &&
+             (originalData.createdAt == null || request.resource.data.createdAt.toMillis() == originalData.createdAt.toMillis());
+    }
+
+    // Users Collection: Stores basic user info and role
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || resource.data.role == 'doctor');
+      allow create: if isOwner(userId) &&
+                      request.resource.data.uid == userId &&
+                      (request.resource.data.role == 'patient' || request.resource.data.role == 'doctor') &&
+                      request.resource.data.keys().hasAll(['uid', 'email', 'displayName', 'role']);
+      allow update: if isOwner(userId) && allowedUserFieldsUpdate(resource.data, request.resource.data);
+      allow delete: if false;
+    }
+
+    // Doctor Profiles: Detailed information about doctors
+    match /doctorProfiles/{doctorId} {
+      allow read: if true;
+      allow create: if isOwner(doctorId) && request.resource.data.doctorId == doctorId;
+      allow update: if isOwner(doctorId) && allowedDoctorProfileFieldsUpdate(resource.data, request.resource.data);
+      allow delete: if false;
+    }
+
+    // Patient Profiles: Detailed information about patients
+    match /patientProfiles/{patientId} {
+      allow read, create, update: if isOwner(patientId) && 
+                                     (request.method == 'create' ? request.resource.data.patientId == patientId : true) &&
+                                     (request.method == 'update' ? allowedPatientProfileFieldsUpdate(resource.data, request.resource.data) : true);
+      allow delete: if false;
+    }
+
+    // Doctor Availability: Time slots doctors set for appointments
+    match /doctorAvailability/{availabilityId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(request.resource.data.doctorId) &&
+                      request.resource.data.isBooked == false &&
+                      request.resource.data.bookedByPatientId == null;
+
+      allow update: if isAuthenticated() &&
+                      (
+                        // Case 1: Doctor modifying their UNBOOKED slot details.
+                        (
+                          isOwner(resource.data.doctorId) &&
+                          resource.data.isBooked == false &&
+                          request.resource.data.isBooked == false &&
+                          request.resource.data.bookedByPatientId == null &&
+                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'startTime', 'endTime', 'updatedAt'])
+                        ) ||
+                        // Case 2: Patient booking an available slot.
+                        (
+                          resource.data.isBooked == false &&
+                          request.resource.data.isBooked == true &&
+                          request.resource.data.bookedByPatientId == request.auth.uid &&
+                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isBooked', 'bookedByPatientId', 'updatedAt'])
+                        ) ||
+                        // Case 3: Patient or Doctor cancelling a booked appointment.
+                        (
+                          resource.data.isBooked == true &&
+                          (request.auth.uid == resource.data.bookedByPatientId || request.auth.uid == resource.data.doctorId) &&
+                          request.resource.data.isBooked == false &&
+                          request.resource.data.bookedByPatientId == null &&
+                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isBooked', 'bookedByPatientId', 'updatedAt'])
+                        )
+                      );
+
+      allow delete: if isOwner(resource.data.doctorId) && resource.data.isBooked == false;
+    }
+
+    // Appointments: Bookings made by patients with doctors
+    match /appointments/{appointmentId} {
+      allow create: if isOwner(request.resource.data.patientId) &&
+                      request.resource.data.status == 'booked' &&
+                      !request.resource.data.keys().hasAny(['doctorNotes', 'cancellationReason']);
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.patientId || request.auth.uid == resource.data.doctorId);
+      allow update: if isAuthenticated() &&
+                      request.resource.data.patientId == resource.data.patientId &&
+                      request.resource.data.doctorId == resource.data.doctorId &&
+                      request.resource.data.availabilitySlotId == resource.data.availabilitySlotId &&
+                      request.resource.data.appointmentDateTime.toMillis() == resource.data.appointmentDateTime.toMillis() &&
+                      request.resource.data.reasonForVisit == resource.data.reasonForVisit &&
+                       (request.resource.data.createdAt == null || request.resource.data.createdAt.toMillis() == resource.data.createdAt.toMillis()) && // createdAt immutable
+                      (
+                        ( // Patient cancelling their own 'booked' appointment
+                          isOwner(resource.data.patientId) &&
+                          resource.data.status == 'booked' &&
+                          request.resource.data.status == 'cancelled' &&
+                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancellationReason', 'updatedAt'])
+                        ) ||
+                        ( // Doctor updating status of a 'booked' appointment (complete or cancel)
+                          isOwner(resource.data.doctorId) &&
+                          resource.data.status == 'booked' &&
+                          (request.resource.data.status == 'completed' || request.resource.data.status == 'cancelled') &&
+                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'doctorNotes', 'cancellationReason', 'updatedAt'])
+                        ) ||
+                        ( // Doctor editing notes on an already 'completed' appointment
+                          isOwner(resource.data.doctorId) &&
+                          resource.data.status == 'completed' &&
+                          request.resource.data.status == 'completed' && 
+                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['doctorNotes', 'updatedAt'])
+                        )
+                      );
+      allow delete: if false;
+    }
+  }
+}
