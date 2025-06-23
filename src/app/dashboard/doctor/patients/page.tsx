@@ -36,38 +36,30 @@ export default function DoctorPatientsPage() {
                 );
                 const appointmentsSnapshot = await getDocs(appointmentsQuery);
 
-                const patientMap = new Map<string, { firstSeen: Date }>();
+                const patientMap = new Map<string, Patient>();
+                const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '';
 
-                appointmentsSnapshot.docs.forEach(doc => {
-                    const data = doc.data();
+                appointmentsSnapshot.docs.forEach(appointmentDoc => {
+                    const data = appointmentDoc.data();
                     const patientId = data.patientId;
+                    if (!patientId) return;
+
                     const appointmentDate = data.appointmentDateTime.toDate();
+                    const existingPatient = patientMap.get(patientId);
 
-                    if (!patientMap.has(patientId) || appointmentDate < patientMap.get(patientId)!.firstSeen) {
-                        patientMap.set(patientId, { firstSeen: appointmentDate });
-                    }
-                });
-
-                const patientPromises = Array.from(patientMap.keys()).map(async patientId => {
-                    const userDocRef = doc(db, 'users', patientId);
-                    const userDocSnap = await getDoc(userDocRef);
-
-                    if (userDocSnap.exists()) {
-                        const userData = userDocSnap.data();
-                        const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '';
-                        return {
+                    if (!existingPatient || appointmentDate < existingPatient.firstSeen) {
+                        patientMap.set(patientId, {
                             id: patientId,
-                            name: userData.displayName,
-                            email: userData.email,
-                            initials: getInitials(userData.displayName),
-                            firstSeen: patientMap.get(patientId)!.firstSeen
-                        };
+                            name: data.patientName || 'Unknown Patient',
+                            email: data.patientEmail || 'No email provided',
+                            initials: getInitials(data.patientName || ''),
+                            firstSeen: appointmentDate,
+                        });
                     }
-                    return null;
                 });
 
-                const resolvedPatients = (await Promise.all(patientPromises)).filter(p => p !== null) as Patient[];
-                setPatients(resolvedPatients);
+                const resolvedPatients = Array.from(patientMap.values());
+                setPatients(resolvedPatients.sort((a, b) => a.name.localeCompare(b.name)));
 
             } catch (error) {
                 console.error("Error fetching patients:", error);

@@ -63,15 +63,14 @@ export default function DoctorDashboardPage() {
                     const apptDate = appt.appointmentDateTime.toDate();
                     return apptDate >= todayStart && apptDate <= todayEnd;
                 });
+                
+                const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '';
 
-                const populatedTodaysAppointments = await Promise.all(
-                    todaysAppts.map(async (appt) => {
-                        const userDoc = await getDoc(doc(db, 'users', appt.patientId));
-                        const patientName = userDoc.exists() ? userDoc.data().displayName : 'Unknown';
-                        const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
-                        return { ...appt, patientName, patientInitials: getInitials(patientName) };
-                    })
-                );
+                const populatedTodaysAppointments = todaysAppts.map(appt => ({
+                    ...appt,
+                    patientName: appt.patientName || 'Unknown Patient',
+                    patientInitials: getInitials(appt.patientName || ''),
+                }));
 
                 setTodaysAppointments(populatedTodaysAppointments);
                 setStats({ totalAppointments: appointmentsThisMonth.length, newPatients: patientIds.size });

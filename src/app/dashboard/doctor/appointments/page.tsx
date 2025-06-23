@@ -35,23 +35,21 @@ export default function DoctorAppointmentsPage() {
                 const q = query(collection(db, 'appointments'), where('doctorId', '==', user.uid));
                 const querySnapshot = await getDocs(q);
                 
-                const fetchedAppointments = await Promise.all(querySnapshot.docs.map(async (appointmentDoc) => {
-                    const appointmentData = appointmentDoc.data();
-                    
-                    const userDocRef = doc(db, 'users', appointmentData.patientId);
-                    const userDocSnap = await getDoc(userDocRef);
-                    const patientName = userDocSnap.exists() ? userDocSnap.data().displayName : 'Unknown Patient';
-                    const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+                const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '';
 
+                const fetchedAppointments = querySnapshot.docs.map((appointmentDoc) => {
+                    const appointmentData = appointmentDoc.data();
+                    const patientName = appointmentData.patientName || 'Unknown Patient';
+                    
                     return {
                         id: appointmentDoc.id,
                         patientId: appointmentData.patientId,
                         patientName,
                         patientInitials: getInitials(patientName),
                         appointmentDateTime: appointmentData.appointmentDateTime,
-                        type: appointmentData.type || 'Online', // Placeholder
+                        type: appointmentData.type || 'Online',
                     } as Appointment;
-                }));
+                });
                 
                 // Sort client-side to avoid composite index
                 fetchedAppointments.sort((a, b) => a.appointmentDateTime.toDate().getTime() - b.appointmentDateTime.toDate().getTime());

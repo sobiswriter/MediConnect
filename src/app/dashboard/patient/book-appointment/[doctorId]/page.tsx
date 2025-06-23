@@ -33,7 +33,7 @@ interface AvailabilitySlot {
 export default function BookAppointmentPage() {
     const params = useParams();
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const { toast } = useToast();
     const doctorId = params.doctorId as string;
 
@@ -125,7 +125,7 @@ export default function BookAppointmentPage() {
     }
 
     const handleBooking = async () => {
-        if (!user || !selectedSlot || !reason || !type) {
+        if (!user || !userProfile || !selectedSlot || !reason || !type) {
             toast({ title: "Incomplete Information", description: "Please select a time slot and provide a reason for your visit.", variant: "destructive" });
             return;
         }
@@ -153,6 +153,8 @@ export default function BookAppointmentPage() {
 
                 transaction.set(newAppointmentRef, {
                     patientId: user.uid,
+                    patientName: userProfile.displayName,
+                    patientEmail: userProfile.email,
                     doctorId: selectedSlot.doctorId,
                     availabilitySlotId: selectedSlot.id,
                     appointmentDateTime: Timestamp.fromDate(appointmentDateTime),
