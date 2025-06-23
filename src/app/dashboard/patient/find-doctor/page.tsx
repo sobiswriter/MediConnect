@@ -10,6 +10,7 @@ import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface DoctorProfile {
     id: string;
@@ -27,9 +28,15 @@ export default function FindDoctorPage() {
     const [allDoctors, setAllDoctors] = useState<DoctorProfile[]>([]);
     const [filteredDoctors, setFilteredDoctors] = useState<DoctorProfile[]>([]);
     const [loading, setLoading] = useState(true);
-    const [nameQuery, setNameQuery] = useState('');
-    const [specialtyFilter, setSpecialtyFilter] = useState('all');
-    const [locationQuery, setLocationQuery] = useState('');
+    
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    // Local state for input controls, synchronized with URL search params
+    const [nameQuery, setNameQuery] = useState(searchParams.get('name') || '');
+    const [specialtyFilter, setSpecialtyFilter] = useState(searchParams.get('specialty') || 'all');
+    const [locationQuery, setLocationQuery] = useState(''); // This is disabled, keep as is.
 
     const specialties = useMemo(() => {
         const uniqueSpecialties = new Set(allDoctors.map(doc => doc.specialty).filter(Boolean));
@@ -57,7 +64,6 @@ export default function FindDoctorPage() {
                     }
                 }) as DoctorProfile[];
                 setAllDoctors(doctorsData);
-                setFilteredDoctors(doctorsData);
             } catch (error) {
                 console.error("Error fetching doctors:", error);
             } finally {
@@ -67,18 +73,42 @@ export default function FindDoctorPage() {
         fetchDoctors();
     }, []);
 
-    const handleSearch = () => {
+    // Filter doctors based on searchParams whenever they change or when doctors are loaded
+    useEffect(() => {
+        if (loading) return;
+        
         let doctors = allDoctors;
+        const currentName = searchParams.get('name');
+        const currentSpecialty = searchParams.get('specialty');
+
+        if (currentName) {
+            doctors = doctors.filter(doc => doc.name.toLowerCase().includes(currentName.toLowerCase()));
+        }
+        if (currentSpecialty && currentSpecialty !== 'all') {
+            doctors = doctors.filter(doc => doc.specialty === currentSpecialty);
+        }
+        
+        setFilteredDoctors(doctors);
+        
+        // Sync input fields with URL params on initial load or back/forward navigation
+        setNameQuery(currentName || '');
+        setSpecialtyFilter(currentSpecialty || 'all');
+
+    }, [allDoctors, searchParams, loading]);
+
+    const handleSearch = () => {
+        const params = new URLSearchParams(searchParams.toString());
         if (nameQuery) {
-            doctors = doctors.filter(doc => doc.name.toLowerCase().includes(nameQuery.toLowerCase()));
+            params.set('name', nameQuery);
+        } else {
+            params.delete('name');
         }
         if (specialtyFilter && specialtyFilter !== 'all') {
-            doctors = doctors.filter(doc => doc.specialty === specialtyFilter);
+            params.set('specialty', specialtyFilter);
+        } else {
+            params.delete('specialty');
         }
-        if (locationQuery) {
-             doctors = doctors.filter(doc => doc.location.toLowerCase().includes(locationQuery.toLowerCase()));
-        }
-        setFilteredDoctors(doctors);
+        router.push(`${pathname}?${params.toString()}`);
     };
 
   return (
