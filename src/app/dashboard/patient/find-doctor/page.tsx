@@ -133,7 +133,7 @@ export default function FindDoctorPage() {
                             </div>
                         </CardContent>
                         <CardFooter className="flex gap-2">
-                             <Button asChild variant="outline" className="w-full bg-white"><Link href={`/dashboard/doctor/profile/${doctor.id}`}>View Profile</Link></Button>
+                             <Button asChild variant="outline" className="w-full bg-white"><Link href={`/dashboard/patient/doctor-profile/${doctor.id}`}>View Profile</Link></Button>
                              <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"><Link href={`/dashboard/patient/book-appointment/${doctor.id}`}>Book Now</Link></Button>
                         </CardFooter>
                     </Card>
