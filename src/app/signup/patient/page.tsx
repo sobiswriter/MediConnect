@@ -61,7 +61,7 @@ export default function PatientSignupPage() {
       
       await batch.commit();
       
-      router.push('/dashboard/patient');
+      router.push('/dashboard/patient/profile');
     } catch (error: any) {
       toast({ title: 'Sign up failed', description: error.message, variant: 'destructive' });
     } finally {

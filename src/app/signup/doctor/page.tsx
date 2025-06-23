@@ -66,7 +66,7 @@ export default function DoctorSignupPage() {
 
             await batch.commit();
 
-            router.push('/dashboard/doctor');
+            router.push('/dashboard/doctor/profile');
         } catch (error: any) {
             toast({ title: 'Sign up failed', description: error.message, variant: 'destructive' });
         } finally {
