@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, Timestamp, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -73,7 +73,7 @@ export default function DoctorAppointmentsPage() {
             setUpcomingAppointments(upcoming);
 
             const groupedAppointments = fetchedAppointments.reduce((acc, curr) => {
-                const dateStr = curr.appointmentDateTime.toDate().toISOString().split('T')[0];
+                const dateStr = format(curr.appointmentDateTime.toDate(), 'yyyy-MM-dd');
                 if (!acc[dateStr]) {
                     acc[dateStr] = [];
                 }
@@ -135,9 +135,9 @@ export default function DoctorAppointmentsPage() {
     };
 
 
-    const selectedDateString = date ? date.toISOString().split('T')[0] : '';
+    const selectedDateString = date ? format(date, 'yyyy-MM-dd') : '';
     const selectedAppointments = appointmentsByDate[selectedDateString] || [];
-    const appointmentDates = Object.keys(appointmentsByDate).map(d => new Date(d));
+    const appointmentDates = Object.keys(appointmentsByDate).map(d => parse(d, 'yyyy-MM-dd', new Date()));
 
     if (loading) {
         return (
