@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -32,8 +32,7 @@ export default function DoctorPatientsPage() {
             try {
                 const appointmentsQuery = query(
                     collection(db, 'appointments'),
-                    where('doctorId', '==', user.uid),
-                    orderBy('appointmentDateTime', 'asc')
+                    where('doctorId', '==', user.uid)
                 );
                 const appointmentsSnapshot = await getDocs(appointmentsQuery);
 

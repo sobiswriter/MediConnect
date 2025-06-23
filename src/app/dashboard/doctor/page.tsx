@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Video } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit, Timestamp, doc, getDoc } from 'firebase/firestore';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { collection, query, where, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { format, subMonths, startOfMonth } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Appointment {
@@ -36,16 +36,18 @@ export default function DoctorDashboardPage() {
                 // Fetch appointments for stats and list
                 const now = new Date();
                 const startOfCurrentMonth = startOfMonth(now);
-                const todayStart = new Date(now.setHours(0, 0, 0, 0));
-                const todayEnd = new Date(now.setHours(23, 59, 59, 999));
+                const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+                const todayEnd = new Date(new Date().setHours(23, 59, 59, 999));
 
                 const appointmentsQuery = query(
                     collection(db, 'appointments'), 
-                    where('doctorId', '==', user.uid),
-                    orderBy('appointmentDateTime', 'asc')
+                    where('doctorId', '==', user.uid)
                 );
                 const querySnapshot = await getDocs(appointmentsQuery);
                 const allAppointments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+
+                // Sort client-side to avoid composite index
+                allAppointments.sort((a, b) => a.appointmentDateTime.toDate().getTime() - b.appointmentDateTime.toDate().getTime());
 
                 const patientIds = new Set<string>();
                 const appointmentsThisMonth = allAppointments.filter(appt => {

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Appointment {
@@ -32,7 +32,7 @@ export default function DoctorAppointmentsPage() {
         const fetchAppointments = async () => {
             setLoading(true);
             try {
-                const q = query(collection(db, 'appointments'), where('doctorId', '==', user.uid), orderBy('appointmentDateTime', 'asc'));
+                const q = query(collection(db, 'appointments'), where('doctorId', '==', user.uid));
                 const querySnapshot = await getDocs(q);
                 
                 const fetchedAppointments = await Promise.all(querySnapshot.docs.map(async (appointmentDoc) => {
@@ -52,6 +52,9 @@ export default function DoctorAppointmentsPage() {
                         type: appointmentData.type || 'Online', // Placeholder
                     } as Appointment;
                 }));
+                
+                // Sort client-side to avoid composite index
+                fetchedAppointments.sort((a, b) => a.appointmentDateTime.toDate().getTime() - b.appointmentDateTime.toDate().getTime());
 
                 setAppointments(fetchedAppointments);
 
