@@ -31,7 +31,7 @@ export default function FindDoctorPage() {
     const [locationQuery, setLocationQuery] = useState('');
 
     const specialties = useMemo(() => {
-        const uniqueSpecialties = new Set(allDoctors.map(doc => doc.specialty));
+        const uniqueSpecialties = new Set(allDoctors.map(doc => doc.specialty).filter(Boolean));
         return Array.from(uniqueSpecialties);
     }, [allDoctors]);
     
@@ -67,7 +67,7 @@ export default function FindDoctorPage() {
         if (nameQuery) {
             doctors = doctors.filter(doc => doc.name.toLowerCase().includes(nameQuery.toLowerCase()));
         }
-        if (specialtyFilter) {
+        if (specialtyFilter && specialtyFilter !== 'all') {
             doctors = doctors.filter(doc => doc.specialty === specialtyFilter);
         }
         if (locationQuery) {
@@ -86,7 +86,7 @@ export default function FindDoctorPage() {
                         <SelectValue placeholder="Filter by specialty" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">All Specialties</SelectItem>
+                        <SelectItem value="all">All Specialties</SelectItem>
                         {specialties.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                 </Select>
