@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
-import { Star, MapPin, Search } from "lucide-react"
+import { Star, MapPin, Search, DollarSign } from "lucide-react"
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,11 +15,12 @@ interface DoctorProfile {
     id: string;
     name: string;
     specialty: string;
-    rating: number; // Mock data for now
-    reviews: number; // Mock data for now
-    location: string; // Mock data for now
+    rating: number; 
+    reviews: number; 
+    location: string;
     image: string;
     dataAiHint: string;
+    consultationFee: number;
 }
 
 export default function FindDoctorPage() {
@@ -27,7 +28,7 @@ export default function FindDoctorPage() {
     const [filteredDoctors, setFilteredDoctors] = useState<DoctorProfile[]>([]);
     const [loading, setLoading] = useState(true);
     const [nameQuery, setNameQuery] = useState('');
-    const [specialtyFilter, setSpecialtyFilter] = useState('');
+    const [specialtyFilter, setSpecialtyFilter] = useState('all');
     const [locationQuery, setLocationQuery] = useState('');
 
     const specialties = useMemo(() => {
@@ -41,16 +42,20 @@ export default function FindDoctorPage() {
             try {
                 const q = query(collection(db, "doctorProfiles"), orderBy("name"));
                 const querySnapshot = await getDocs(q);
-                const doctorsData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    name: doc.data().name,
-                    specialty: doc.data().specialty,
-                    rating: 4.5 + Math.random() * 0.5, // Mock
-                    reviews: Math.floor(Math.random() * 200), // Mock
-                    location: "Virtual", // Mock
-                    image: `https://placehold.co/128x128.png`,
-                    dataAiHint: 'doctor portrait'
-                })) as DoctorProfile[];
+                const doctorsData = querySnapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        name: data.name,
+                        specialty: data.specialty,
+                        consultationFee: data.consultationFee || 0,
+                        rating: 4.5 + Math.random() * 0.5, // Mock
+                        reviews: Math.floor(Math.random() * 200), // Mock
+                        location: "Virtual", // Mock
+                        image: `https://placehold.co/128x128.png`,
+                        dataAiHint: 'doctor portrait'
+                    }
+                }) as DoctorProfile[];
                 setAllDoctors(doctorsData);
                 setFilteredDoctors(doctorsData);
             } catch (error) {
@@ -117,10 +122,14 @@ export default function FindDoctorPage() {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-grow">
+                        <CardContent className="flex-grow space-y-2">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <MapPin className="w-4 h-4" />
                                 <span>{doctor.location}</span>
+                            </div>
+                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <DollarSign className="w-4 h-4" />
+                                <span>${doctor.consultationFee} Consultation Fee</span>
                             </div>
                         </CardContent>
                         <CardFooter className="flex gap-2">

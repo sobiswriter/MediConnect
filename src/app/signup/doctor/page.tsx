@@ -58,6 +58,9 @@ export default function DoctorSignupPage() {
                 specialty: specialization,
                 licenseNumber: licenseNumber,
                 yearsOfExperience: parseInt(experience, 10),
+                bio: '',
+                qualifications: [],
+                consultationFee: 50, // Default fee
                 createdAt: serverTimestamp(),
             });
 
@@ -103,11 +106,11 @@ export default function DoctorSignupPage() {
                                     <SelectValue placeholder="Select specialization" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="cardiology">Cardiology</SelectItem>
-                                    <SelectItem value="dermatology">Dermatology</SelectItem>
-                                    <SelectItem value="neurology">Neurology</SelectItem>
-                                    <SelectItem value="pediatrics">Pediatrics</SelectItem>
-                                    <SelectItem value="orthopedics">Orthopedics</SelectItem>
+                                    <SelectItem value="Cardiology">Cardiology</SelectItem>
+                                    <SelectItem value="Dermatology">Dermatology</SelectItem>
+                                    <SelectItem value="Neurology">Neurology</SelectItem>
+                                    <SelectItem value="Pediatrics">Pediatrics</SelectItem>
+                                    <SelectItem value="Orthopedics">Orthopedics</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

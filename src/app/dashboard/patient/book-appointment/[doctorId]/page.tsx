@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -20,6 +19,7 @@ interface DoctorProfile {
     id: string;
     name: string;
     specialty: string;
+    consultationFee: number;
 }
 
 interface AvailabilitySlot {
@@ -62,6 +62,7 @@ export default function BookAppointmentPage() {
                         id: doctorDocSnap.id,
                         name: data.name,
                         specialty: data.specialty,
+                        consultationFee: data.consultationFee || 0,
                     });
                 } else {
                     toast({ title: "Error", description: "Doctor not found.", variant: "destructive" });
@@ -252,6 +253,7 @@ export default function BookAppointmentPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {doctor && <p><strong>Doctor:</strong> {doctor.name}</p>}
+                        {doctor && <p><strong>Fee:</strong> ${doctor.consultationFee}</p>}
                         {selectedSlot && date ? (
                             <p><strong>Time:</strong> {format(selectedSlot.date.toDate(), 'EEEE, MMMM d')} at {formatTime(selectedSlot.startTime)}</p>
                         ) : (

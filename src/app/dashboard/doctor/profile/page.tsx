@@ -22,6 +22,7 @@ interface DoctorProfile {
     yearsOfExperience: number;
     bio: string;
     qualifications: string[];
+    consultationFee: number;
 }
 
 export default function DoctorProfilePage() {
@@ -46,6 +47,7 @@ export default function DoctorProfilePage() {
                     yearsOfExperience: data.yearsOfExperience || 0,
                     bio: data.bio || '',
                     qualifications: data.qualifications || [],
+                    consultationFee: data.consultationFee || 50,
                 });
             }
         } catch (error) {
@@ -147,6 +149,9 @@ export default function DoctorProfilePage() {
                                 <Label htmlFor="email">Email Address</Label>
                                 <Input id="email" type="email" value={profile?.email || ''} disabled />
                             </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-3 gap-4">
                             <div className="space-y-1">
                                 <Label htmlFor="specialty">Specialty</Label>
                                 <Select value={profile?.specialty || ''} onValueChange={val => setProfile(p => p ? { ...p, specialty: val } : null)}>
@@ -165,6 +170,10 @@ export default function DoctorProfilePage() {
                              <div className="space-y-1">
                                 <Label htmlFor="experience">Years of Experience</Label>
                                 <Input id="experience" type="number" value={profile?.yearsOfExperience || 0} onChange={e => setProfile(p => p ? { ...p, yearsOfExperience: Number(e.target.value) } : null)} />
+                            </div>
+                             <div className="space-y-1">
+                                <Label htmlFor="fee">Consultation Fee ($)</Label>
+                                <Input id="fee" type="number" value={profile?.consultationFee || 0} onChange={e => setProfile(p => p ? { ...p, consultationFee: Number(e.target.value) } : null)} />
                             </div>
                         </div>
 
