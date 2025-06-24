@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -46,7 +45,9 @@ service cloud.firestore {
 
     // Appointments: Can only be created by patients, but can be read or updated by either the patient or the doctor involved.
     match /appointments/{appointmentId} {
-      allow read, update: if request.auth != null && (request.resource.data.patientId == request.auth.uid || request.resource.data.doctorId == request.auth.uid);
+      // Use `resource.data` for read/update to check existing data.
+      // Use `request.resource.data` for create as the document doesn't exist yet.
+      allow read, update: if request.auth != null && (resource.data.patientId == request.auth.uid || resource.data.doctorId == request.auth.uid);
       allow create: if request.auth != null && isPatient() && request.resource.data.patientId == request.auth.uid;
     }
   }
