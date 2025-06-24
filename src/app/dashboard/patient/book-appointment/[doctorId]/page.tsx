@@ -191,8 +191,8 @@ export default function BookAppointmentPage() {
     }
 
     return (
-        <div className="grid lg:grid-cols-3 gap-6 items-start">
-            <div className="lg:col-span-2 space-y-6">
+        <div className="grid lg:grid-cols-5 gap-8 items-start">
+            <div className="lg:col-span-3 space-y-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center gap-4">
                          <Avatar className="h-16 w-16">
@@ -221,32 +221,30 @@ export default function BookAppointmentPage() {
                                 }}
                             />
                         </div>
+                        {date && (
+                            <div className="mt-6">
+                                <CardHeader className="p-0 mb-4">
+                                    <CardTitle>Select a Time Slot</CardTitle>
+                                    <CardDescription>Available slots for {format(date, 'MMMM d, yyyy')}</CardDescription>
+                                </CardHeader>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                    {slotsForSelectedDate.length > 0 ? slotsForSelectedDate.map(slot => (
+                                        <Button 
+                                            key={slot.id} 
+                                            variant={selectedSlot?.id === slot.id ? 'default' : 'outline'}
+                                            className={selectedSlot?.id === slot.id ? 'bg-accent text-accent-foreground' : ''}
+                                            onClick={() => setSelectedSlot(slot)}
+                                        >
+                                            {formatTime(slot.startTime)}
+                                        </Button>
+                                    )) : <p className="text-sm text-muted-foreground col-span-full">No available slots for this day.</p>}
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
-                {date && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Select a Time Slot</CardTitle>
-                            <CardDescription>Available slots for {format(date, 'MMMM d, yyyy')}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                                {slotsForSelectedDate.length > 0 ? slotsForSelectedDate.map(slot => (
-                                    <Button 
-                                        key={slot.id} 
-                                        variant={selectedSlot?.id === slot.id ? 'default' : 'outline'}
-                                        className={selectedSlot?.id === slot.id ? 'bg-accent text-accent-foreground' : ''}
-                                        onClick={() => setSelectedSlot(slot)}
-                                    >
-                                        {formatTime(slot.startTime)}
-                                    </Button>
-                                )) : <p className="text-sm text-muted-foreground col-span-full">No available slots for this day.</p>}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
             </div>
-            <div className="lg:col-span-1 sticky top-20">
+            <div className="lg:col-span-2 sticky top-20">
                 <Card>
                     <CardHeader>
                         <CardTitle>Your Appointment</CardTitle>
