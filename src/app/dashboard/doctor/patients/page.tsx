@@ -74,7 +74,7 @@ export default function DoctorPatientsPage() {
 
     if (loading) {
         return (
-            <div className="max-w-7xl mx-auto">
+            <div>
                 <Card>
                     <CardHeader>
                         <Skeleton className="h-8 w-1/4" />
@@ -94,7 +94,7 @@ export default function DoctorPatientsPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto">
+        <div>
             <Card>
                 <CardHeader>
                     <CardTitle>My Patients</CardTitle>
