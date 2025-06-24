@@ -88,27 +88,27 @@ export default function PatientProfilePage() {
     if (loading) {
          return (
             <Card>
-                <CardHeader>
-                    <Skeleton className="h-8 w-1/4" />
-                    <Skeleton className="h-4 w-2/5 mt-2" />
+                <CardHeader className="p-8">
+                    <Skeleton className="h-9 w-1/3" />
+                    <Skeleton className="h-5 w-1/2 mt-2" />
                 </CardHeader>
-                <CardContent>
-                    <div className="flex items-center gap-4 mb-8">
-                        <Skeleton className="h-20 w-20 rounded-full" />
+                <CardContent className="p-8 pt-0">
+                    <div className="flex items-center gap-6 mb-10">
+                        <Skeleton className="h-24 w-24 rounded-full" />
                         <div className="space-y-2">
-                            <Skeleton className="h-6 w-48" />
-                            <Skeleton className="h-4 w-64" />
+                            <Skeleton className="h-7 w-52" />
+                            <Skeleton className="h-5 w-64" />
                         </div>
                     </div>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
-                            <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
-                            <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
-                            <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
+                    <div className="space-y-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-3"><Skeleton className="h-5 w-24" /><Skeleton className="h-12 w-full" /></div>
+                            <div className="space-y-3"><Skeleton className="h-5 w-24" /><Skeleton className="h-12 w-full" /></div>
+                            <div className="space-y-3"><Skeleton className="h-5 w-24" /><Skeleton className="h-12 w-full" /></div>
+                            <div className="space-y-3"><Skeleton className="h-5 w-24" /><Skeleton className="h-12 w-full" /></div>
+                            <div className="md:col-span-2 space-y-3"><Skeleton className="h-5 w-24" /><Skeleton className="h-12 w-full" /></div>
+                            <div className="md:col-span-2 space-y-3"><Skeleton className="h-5 w-36" /><Skeleton className="h-32 w-full" /></div>
                         </div>
-                        <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
-                        <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-24 w-full" /></div>
                     </div>
                 </CardContent>
             </Card>
@@ -117,53 +117,53 @@ export default function PatientProfilePage() {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>My Profile</CardTitle>
-                <CardDescription>Update your personal and medical information.</CardDescription>
+            <CardHeader className="p-8">
+                <CardTitle className="text-3xl font-headline">My Profile</CardTitle>
+                <CardDescription className="text-base text-muted-foreground">Update your personal and medical information.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSaveChanges} className="space-y-8">
-                    <div className="flex items-center gap-4">
-                        <Avatar className="h-20 w-20">
-                            <AvatarImage src="https://placehold.co/128x128.png" alt={profile?.name || ''} />
-                            <AvatarFallback>{getInitials(profile?.name || '')}</AvatarFallback>
+            <CardContent className="p-8 pt-0">
+                <form onSubmit={handleSaveChanges} className="space-y-10">
+                    <div className="flex items-center gap-6">
+                        <Avatar className="h-24 w-24">
+                            <AvatarImage src="https://placehold.co/128x128.png" alt={profile?.name || ''} data-ai-hint="person" />
+                            <AvatarFallback className="text-3xl">{getInitials(profile?.name || '')}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <h3 className="text-xl font-semibold">{profile?.name}</h3>
-                            <p className="text-muted-foreground">{profile?.email}</p>
+                            <h3 className="text-2xl font-semibold">{profile?.name}</h3>
+                            <p className="text-base text-muted-foreground">{profile?.email}</p>
                             <Button variant="outline" size="sm" className="mt-2 bg-white">Change Photo</Button>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" value={profile?.name || ''} onChange={e => setProfile(p => p ? { ...p, name: e.target.value } : null)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                            <Label htmlFor="name" className="text-base">Full Name</Label>
+                            <Input id="name" className="h-12 text-base" value={profile?.name || ''} onChange={e => setProfile(p => p ? { ...p, name: e.target.value } : null)} />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input id="email" type="email" value={profile?.email || ''} disabled />
+                        <div className="space-y-3">
+                            <Label htmlFor="email" className="text-base">Email Address</Label>
+                            <Input id="email" type="email" className="h-12 text-base" value={profile?.email || ''} disabled />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" type="tel" placeholder="+1 (123) 456-7890" value={profile?.phone || ''} onChange={e => setProfile(p => p ? { ...p, phone: e.target.value } : null)} />
+                        <div className="space-y-3">
+                            <Label htmlFor="phone" className="text-base">Phone Number</Label>
+                            <Input id="phone" type="tel" className="h-12 text-base" placeholder="+1 (123) 456-7890" value={profile?.phone || ''} onChange={e => setProfile(p => p ? { ...p, phone: e.target.value } : null)} />
                         </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="dob">Date of Birth</Label>
-                            <Input id="dob" type="date" value={profile?.dateOfBirth || ''} onChange={e => setProfile(p => p ? { ...p, dateOfBirth: e.target.value } : null)} />
+                         <div className="space-y-3">
+                            <Label htmlFor="dob" className="text-base">Date of Birth</Label>
+                            <Input id="dob" type="date" className="h-12 text-base" value={profile?.dateOfBirth || ''} onChange={e => setProfile(p => p ? { ...p, dateOfBirth: e.target.value } : null)} />
                         </div>
-                        <div className="md:col-span-2 space-y-2">
-                            <Label htmlFor="address">Address</Label>
-                            <Input id="address" placeholder="123 Health St, Wellness City, USA" value={profile?.address || ''} onChange={e => setProfile(p => p ? { ...p, address: e.target.value } : null)} />
+                        <div className="md:col-span-2 space-y-3">
+                            <Label htmlFor="address" className="text-base">Address</Label>
+                            <Input id="address" className="h-12 text-base" placeholder="123 Health St, Wellness City, USA" value={profile?.address || ''} onChange={e => setProfile(p => p ? { ...p, address: e.target.value } : null)} />
                         </div>
-                        <div className="md:col-span-2 space-y-2">
-                            <Label htmlFor="medical-history">Brief Medical History</Label>
-                            <Textarea id="medical-history" placeholder="e.g. Allergies, chronic conditions..." rows={4} value={profile?.medicalHistory || ''} onChange={e => setProfile(p => p ? { ...p, medicalHistory: e.target.value } : null)} />
+                        <div className="md:col-span-2 space-y-3">
+                            <Label htmlFor="medical-history" className="text-base">Brief Medical History</Label>
+                            <Textarea id="medical-history" className="text-base min-h-[120px]" placeholder="e.g. Allergies, chronic conditions..." rows={5} value={profile?.medicalHistory || ''} onChange={e => setProfile(p => p ? { ...p, medicalHistory: e.target.value } : null)} />
                         </div>
                     </div>
 
                     <div className="flex justify-end">
-                        <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={loading}>{loading ? 'Saving...' : 'Save Changes'}</Button>
+                        <Button type="submit" size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={loading}>{loading ? 'Saving...' : 'Save Changes'}</Button>
                     </div>
                 </form>
             </CardContent>
