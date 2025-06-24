@@ -1,3 +1,4 @@
+
 'use client'
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -112,7 +113,7 @@ export default function DoctorDashboardPage() {
 
     if (loading) {
         return (
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-7xl mx-auto">
                 <Skeleton className="h-9 w-1/2" />
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     <Card><CardHeader><Skeleton className="h-5 w-3/4" /></CardHeader><CardContent><Skeleton className="h-8 w-1/4" /></CardContent></Card>
@@ -128,7 +129,7 @@ export default function DoctorDashboardPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-7xl mx-auto">
             <h2 className="text-3xl font-bold tracking-tight font-headline">Welcome back, {userProfile?.displayName || 'Doctor'}!</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card>

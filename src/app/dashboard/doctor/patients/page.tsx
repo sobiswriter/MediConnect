@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -73,67 +74,71 @@ export default function DoctorPatientsPage() {
 
     if (loading) {
         return (
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-8 w-1/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="max-w-7xl mx-auto">
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         )
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>My Patients</CardTitle>
-                <CardDescription>A list of all patients you have had appointments with.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {patients.length > 0 ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Patient</TableHead>
-                                <TableHead className="hidden md:table-cell">Email</TableHead>
-                                <TableHead className="hidden sm:table-cell">First Appointment</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {patients.map(patient => (
-                                <TableRow key={patient.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar>
-                                                <AvatarImage src={patient.avatar} alt={patient.name} />
-                                                <AvatarFallback>{patient.initials}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="font-medium">{patient.name}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="hidden md:table-cell">{patient.email}</TableCell>
-                                    <TableCell className="hidden sm:table-cell">{patient.firstSeen.toLocaleDateString()}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button asChild variant="outline" size="sm">
-                                            <Link href={`#`}>View Record</Link>
-                                        </Button>
-                                    </TableCell>
+        <div className="max-w-7xl mx-auto">
+            <Card>
+                <CardHeader>
+                    <CardTitle>My Patients</CardTitle>
+                    <CardDescription>A list of all patients you have had appointments with.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {patients.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Patient</TableHead>
+                                    <TableHead className="hidden md:table-cell">Email</TableHead>
+                                    <TableHead className="hidden sm:table-cell">First Appointment</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">You have not seen any patients yet.</p>
-                )}
-            </CardContent>
-        </Card>
+                            </TableHeader>
+                            <TableBody>
+                                {patients.map(patient => (
+                                    <TableRow key={patient.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar>
+                                                    <AvatarImage src={patient.avatar} alt={patient.name} />
+                                                    <AvatarFallback>{patient.initials}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="font-medium">{patient.name}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell">{patient.email}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{patient.firstSeen.toLocaleDateString()}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href={`#`}>View Record</Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-8">You have not seen any patients yet.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }
