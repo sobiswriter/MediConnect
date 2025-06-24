@@ -18,6 +18,7 @@ interface Appointment {
   date: string;
   fullDate: Date;
   type: 'Online' | 'In-Person';
+  status: 'booked' | 'cancelled' | 'completed';
   avatar: string;
   initials: string;
   isJoinable: boolean;
@@ -29,9 +30,11 @@ export default function PatientDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-
     const fetchAppointments = async () => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         try {
             const now = new Date();
@@ -57,6 +60,7 @@ export default function PatientDashboardPage() {
                     date: '', // Will be recalculated
                     fullDate: appointmentDate,
                     type: data.type || 'Online',
+                    status: data.status || 'booked',
                     avatar: 'https://placehold.co/100x100.png',
                     initials: getInitials(doctorData.name),
                     isJoinable: false, // will be recalculated
@@ -64,7 +68,7 @@ export default function PatientDashboardPage() {
             }));
             
             const appointmentsData = allAppointments
-                .filter(appt => appt.fullDate >= now) // Filter for upcoming appointments
+                .filter(appt => appt.fullDate >= now && appt.status === 'booked') // Filter for upcoming, booked appointments
                 .sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime()) // Sort by date ascending
                 .map(appt => {
                     const diffMinutes = (appt.fullDate.getTime() - now.getTime()) / (1000 * 60);
@@ -140,6 +144,11 @@ export default function PatientDashboardPage() {
                     <p className="text-sm text-muted-foreground mb-4">
                         Ready to book your next check-up or consultation?
                     </p>
+                    <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                        <Link href="/dashboard/patient/find-doctor">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Book Now
+                        </Link>
+                    </Button>
                 </CardContent>
             </Card>
         )}

@@ -97,7 +97,7 @@ export default function Home() {
               </div>
               <div>
                 <Image
-                  src="https://placehold.co/600x400.png"
+                  src="/images/new.jpeg"
                   alt="A modern hospital building"
                   data-ai-hint="hospital building"
                   width={600}
