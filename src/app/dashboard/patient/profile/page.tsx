@@ -1,9 +1,11 @@
+
 'use client';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
@@ -20,6 +22,7 @@ interface PatientProfile {
     email: string;
     phone: string;
     dateOfBirth: string;
+    gender: 'male' | 'female' | 'other' | 'prefer-not-to-say' | '';
     address: string;
     medicalHistory: string;
 }
@@ -43,6 +46,7 @@ export default function PatientProfilePage() {
                     email: data.email || '',
                     phone: data.phone || '',
                     dateOfBirth: data.dateOfBirth || '',
+                    gender: data.gender || '',
                     address: data.address || '',
                     medicalHistory: data.medicalHistory || '',
                 });
@@ -68,6 +72,7 @@ export default function PatientProfilePage() {
                 name: profile.name,
                 phone: profile.phone,
                 dateOfBirth: profile.dateOfBirth,
+                gender: profile.gender,
                 address: profile.address,
                 medicalHistory: profile.medicalHistory,
                 updatedAt: serverTimestamp()
@@ -163,6 +168,20 @@ export default function PatientProfilePage() {
                                     <Label htmlFor="dob">Date of Birth</Label>
                                     <Input id="dob" type="date" value={profile?.dateOfBirth || ''} onChange={e => setProfile(p => p ? { ...p, dateOfBirth: e.target.value } : null)} />
                                 </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="gender">Gender</Label>
+                                    <Select value={profile?.gender || ''} onValueChange={(value) => setProfile(p => p ? { ...p, gender: value as PatientProfile['gender'] } : null)}>
+                                        <SelectTrigger id="gender">
+                                            <SelectValue placeholder="Select gender" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="male">Male</SelectItem>
+                                            <SelectItem value="female">Female</SelectItem>
+                                            <SelectItem value="other">Other</SelectItem>
+                                            <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                                 <div className="md:col-span-2 space-y-2">
                                     <Label htmlFor="address">Address</Label>
                                     <Input id="address" placeholder="123 Health St, Wellness City, USA" value={profile?.address || ''} onChange={e => setProfile(p => p ? { ...p, address: e.target.value } : null)} />
@@ -216,3 +235,5 @@ export default function PatientProfilePage() {
         </div>
     )
 }
+
+    
