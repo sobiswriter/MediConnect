@@ -98,8 +98,8 @@ export default function Home() {
               <div>
                 <Image
                   src="https://placehold.co/600x400.png"
-                  alt="Doctors collaborating"
-                  data-ai-hint="doctor collaboration"
+                  alt="A modern hospital building"
+                  data-ai-hint="hospital building"
                   width={600}
                   height={400}
                   className="rounded-lg shadow-xl"
