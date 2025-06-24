@@ -13,6 +13,7 @@ import { format, parse, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 interface Appointment {
@@ -275,7 +276,9 @@ export default function DoctorAppointmentsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {selectedAppointments.length > 0 ? selectedAppointments.map((appt) => (
+                            {selectedAppointments.length > 0 ? selectedAppointments.map((appt) => {
+                                const isAppointmentInPast = appt.appointmentDateTime.toDate() < new Date();
+                                return (
                                 <div key={appt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                                     <div className="flex items-center gap-3">
                                         <Avatar>
@@ -310,14 +313,29 @@ export default function DoctorAppointmentsPage() {
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
-                                                <Button variant="outline" size="sm" onClick={() => handleCompleteAppointment(appt.id)} disabled={completing === appt.id || cancelling === appt.id}>
-                                                    {completing === appt.id ? '...' : 'Complete'}
-                                                </Button>
+                                                {isAppointmentInPast ? (
+                                                    <Button variant="outline" size="sm" onClick={() => handleCompleteAppointment(appt.id)} disabled={completing === appt.id || cancelling === appt.id}>
+                                                        {completing === appt.id ? '...' : 'Complete'}
+                                                    </Button>
+                                                ) : (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span tabIndex={0}>
+                                                                <Button variant="outline" size="sm" disabled>
+                                                                    Complete
+                                                                </Button>
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Cannot complete a future appointment.</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                )}
                                             </>
                                         )}
                                     </div>
                                 </div>
-                            )) : (
+                            )}) : (
                                 <p className="text-sm text-muted-foreground text-center py-8">No appointments scheduled for this day.</p>
                             )}
                         </div>
@@ -368,9 +386,18 @@ export default function DoctorAppointmentsPage() {
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
-                                                <Button variant="outline" size="sm" onClick={() => handleCompleteAppointment(appt.id)} disabled={completing === appt.id || cancelling === appt.id}>
-                                                    {completing === appt.id ? '...' : 'Complete'}
-                                                </Button>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span tabIndex={0}>
+                                                            <Button variant="outline" size="sm" disabled>
+                                                                Complete
+                                                            </Button>
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Cannot complete a future appointment.</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
                                             </>
                                         )}
                                     </div>
