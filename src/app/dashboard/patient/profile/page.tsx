@@ -88,7 +88,7 @@ export default function PatientProfilePage() {
 
     if (loading) {
          return (
-            <Card>
+            <Card className="max-w-4xl mx-auto">
                 <CardHeader><Skeleton className="h-8 w-1/4" /><Skeleton className="h-4 w-2/5 mt-2" /></CardHeader>
                 <CardContent className="space-y-6">
                     <div className="flex items-center gap-4">
@@ -106,7 +106,7 @@ export default function PatientProfilePage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-4xl mx-auto">
             <Card>
                 <CardHeader>
                     <CardTitle>My Profile</CardTitle>

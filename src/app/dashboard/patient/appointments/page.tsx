@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,24 +117,34 @@ export default function PatientAppointmentsPage() {
 
     if (loading) {
         return (
-             <div className="space-y-6">
-                <Card>
-                    <CardHeader><Skeleton className="h-8 w-1/3" /></CardHeader>
-                    <CardContent><Skeleton className="h-72 w-full" /></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
-                    <CardContent className="space-y-4">
-                        <Skeleton className="h-20 w-full" />
-                        <Skeleton className="h-20 w-full" />
-                    </CardContent>
-                </Card>
+             <div className="grid md:grid-cols-2 gap-6 items-start">
+                <div>
+                    <Card>
+                        <CardHeader><Skeleton className="h-8 w-1/3" /></CardHeader>
+                        <CardContent><Skeleton className="h-72 w-full" /></CardContent>
+                    </Card>
+                </div>
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
+                        <CardContent className="space-y-4">
+                            <Skeleton className="h-20 w-full" />
+                            <Skeleton className="h-20 w-full" />
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
+                        <CardContent className="space-y-4">
+                            <Skeleton className="h-20 w-full" />
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         )
     }
 
     return (
-        <div className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-6 items-start">
             <Card>
                 <CardHeader>
                     <CardTitle>My Appointments</CardTitle>
@@ -154,6 +163,7 @@ export default function PatientAppointmentsPage() {
                     />
                 </CardContent>
             </Card>
+            <div className="space-y-6">
              <Card>
                 <CardHeader>
                     <CardTitle>Upcoming</CardTitle>
@@ -221,6 +231,7 @@ export default function PatientAppointmentsPage() {
                     )}
                 </CardContent>
             </Card>
+            </div>
         </div>
     )
 }

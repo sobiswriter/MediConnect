@@ -95,7 +95,7 @@ export default function PatientDashboardPage() {
   
   if (loading) {
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-7xl mx-auto">
             <Skeleton className="h-9 w-1/2" />
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
@@ -107,7 +107,7 @@ export default function PatientDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <h2 className="text-3xl font-bold tracking-tight font-headline">Welcome back, {userProfile?.displayName || 'User'}!</h2>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
