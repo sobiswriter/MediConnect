@@ -153,10 +153,10 @@ export default function FindDoctorPage() {
             </Card>
 
             {loading ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {[...Array(6)].map((_, i) => (
                         <Card key={i}>
-                            <CardHeader className="flex-row gap-4 items-start">
+                            <CardHeader className="flex-row gap-4 items-center">
                                 <Skeleton className="h-20 w-20 rounded-full" />
                                 <div className="space-y-2">
                                     <Skeleton className="h-5 w-32" />
@@ -174,10 +174,10 @@ export default function FindDoctorPage() {
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {filteredDoctors.map((doctor) => (
                             <Card key={doctor.id} className="flex flex-col">
-                                <CardHeader className="flex-row gap-4 items-start">
+                                <CardHeader className="flex-row gap-4 items-center">
                                     <Image src={doctor.image} alt={`Portrait of ${doctor.name}`} data-ai-hint={doctor.dataAiHint} width={80} height={80} className="rounded-full border-2 border-primary" />
                                     <div>
                                         <CardTitle className="text-lg">{doctor.name}</CardTitle>
@@ -199,7 +199,7 @@ export default function FindDoctorPage() {
                                         <span>${doctor.consultationFee} Consultation Fee</span>
                                     </div>
                                 </CardContent>
-                                <CardFooter className="flex flex-col sm:flex-row gap-2">
+                                <CardFooter className="flex gap-2">
                                     <Button asChild variant="outline" className="w-full bg-white"><Link href={`/dashboard/patient/doctor-profile/${doctor.id}`}>View Profile</Link></Button>
                                     <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"><Link href={`/dashboard/patient/book-appointment/${doctor.id}`}>Book Now</Link></Button>
                                 </CardFooter>
@@ -223,29 +223,29 @@ export default function FindDoctorPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-start gap-4">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary-foreground">
-                            <Search className="h-5 w-5" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary font-bold">
+                            1
                         </div>
                         <div>
-                            <h4 className="font-semibold">1. Search</h4>
+                            <h4 className="font-semibold">Search</h4>
                             <p className="text-sm text-muted-foreground">Use the filters to find a specialist that meets your needs.</p>
                         </div>
                     </div>
                      <div className="flex items-start gap-4">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary-foreground">
-                            <User className="h-5 w-5" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary font-bold">
+                           2
                         </div>
                         <div>
-                            <h4 className="font-semibold">2. View Profile</h4>
+                            <h4 className="font-semibold">View Profile</h4>
                             <p className="text-sm text-muted-foreground">Learn about the doctor's experience and qualifications.</p>
                         </div>
                     </div>
                      <div className="flex items-start gap-4">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary-foreground">
-                            <Calendar className="h-5 w-5" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary font-bold">
+                           3
                         </div>
                         <div>
-                            <h4 className="font-semibold">3. Book Now</h4>
+                            <h4 className="font-semibold">Book Now</h4>
                             <p className="text-sm text-muted-foreground">Choose an available time slot and confirm your appointment.</p>
                         </div>
                     </div>
@@ -266,5 +266,3 @@ export default function FindDoctorPage() {
     </div>
   )
 }
-
-    
