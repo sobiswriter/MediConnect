@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
 
 interface Appointment {
   id: string;
@@ -95,118 +97,135 @@ export default function PatientDashboardPage() {
   
   if (loading) {
     return (
-        <div className="space-y-6 max-w-7xl mx-auto">
-            <Skeleton className="h-9 w-1/2" />
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid lg:grid-cols-3 gap-6 items-start">
+            <div className="lg:col-span-2 space-y-6">
+                <Skeleton className="h-9 w-1/2" />
                 <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></CardContent></Card>
             </div>
-            <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></CardContent></Card>
+            <div className="lg:col-span-1 space-y-6">
+                <Card><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
+                <Card><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
+            </div>
         </div>
     )
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <h2 className="text-3xl font-bold tracking-tight font-headline">Welcome back, {userProfile?.displayName || 'User'}!</h2>
-      
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {nextAppointment ? (
-            <Card className="bg-primary/20 border-primary">
-            <CardHeader>
-                <CardTitle>Next Appointment</CardTitle>
-                <CardDescription>You have an upcoming appointment soon.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                    <AvatarImage src={nextAppointment.avatar} alt={nextAppointment.doctor} />
-                    <AvatarFallback>{nextAppointment.initials}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <p className="font-semibold">{nextAppointment.doctor}</p>
-                    <p className="text-sm text-muted-foreground">{nextAppointment.specialty}</p>
-                    <p className="text-sm font-medium">{nextAppointment.date}</p>
+    <div className="grid lg:grid-cols-3 gap-6 items-start">
+        <div className="lg:col-span-2 space-y-6">
+            <h2 className="text-3xl font-bold tracking-tight font-headline">Welcome back, {userProfile?.displayName || 'User'}!</h2>
+            
+            {nextAppointment ? (
+                <Card className="bg-primary/20 border-primary">
+                    <CardHeader>
+                        <CardTitle>Next Appointment</CardTitle>
+                        <CardDescription>You have an upcoming appointment soon.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center gap-4">
+                        <Avatar className="h-12 w-12">
+                            <AvatarImage src={nextAppointment.avatar} alt={nextAppointment.doctor} />
+                            <AvatarFallback>{nextAppointment.initials}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-semibold">{nextAppointment.doctor}</p>
+                            <p className="text-sm text-muted-foreground">{nextAppointment.specialty}</p>
+                            <p className="text-sm font-medium">{nextAppointment.date}</p>
+                        </div>
+                        </div>
+                        <Button className="w-full mt-4 bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!nextAppointment.isJoinable}>
+                            <Video className="mr-2 h-4 w-4" /> Join Video Call
+                        </Button>
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>No Upcoming Appointments</CardTitle>
+                        <CardDescription>Your schedule is clear. Ready to book your next check-up?</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                            <Link href="/dashboard/patient/find-doctor">
+                                <PlusCircle className="mr-2 h-4 w-4" /> Book a New Appointment
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                <div >
+                    <CardTitle>Upcoming Appointments</CardTitle>
+                    <CardDescription>Here are your next scheduled appointments.</CardDescription>
                 </div>
-                </div>
-                <Button className="w-full mt-4 bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!nextAppointment.isJoinable}>
-                    <Video className="mr-2 h-4 w-4" /> Join Video Call
+                <Button asChild variant="ghost">
+                    <Link href="/dashboard/patient/appointments">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-            </CardContent>
-            </Card>
-        ) : (
-            <Card className="bg-primary/20 border-primary">
-                <CardHeader>
-                    <CardTitle>No Upcoming Appointments</CardTitle>
-                    <CardDescription>Your schedule is clear.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                        Ready to book your next check-up or consultation?
-                    </p>
-                    <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                <div className="space-y-4">
+                    {upcomingAppointments.length > 0 ? (
+                        upcomingAppointments.map((appt) => (
+                        <div key={appt.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
+                            <div className="flex items-center gap-4">
+                            <Avatar>
+                                <AvatarImage src={appt.avatar} alt={appt.doctor} />
+                                <AvatarFallback>{appt.initials}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold">{appt.doctor}</p>
+                                <p className="text-sm text-muted-foreground">{appt.specialty}</p>
+                            </div>
+                            </div>
+                            <div className="text-right">
+                            <p className="text-sm font-medium">{appt.date}</p>
+                            <p className={`text-xs font-semibold ${appt.type === 'Online' ? 'text-accent-foreground' : 'text-blue-600'}`}>{appt.type}</p>
+                            </div>
+                        </div>
+                        ))
+                    ) : (
+                        <p className="text-center text-sm text-muted-foreground py-4">No upcoming appointments found.</p>
+                    )}
+                </div>
+                </CardContent>
+            </Card>
+        </div>
+        <div className="lg:col-span-1 space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Quick Links</CardTitle>
+                    <CardDescription>Need to get somewhere fast?</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col space-y-2">
+                    <Button asChild variant="outline" className="justify-between bg-white">
                         <Link href="/dashboard/patient/find-doctor">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Book Now
-                        </Link>
+                        <span>Find a Doctor</span>
+                        <ArrowRight className="h-4 w-4" />
+                    </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="justify-between bg-white">
+                        <Link href="/dashboard/patient/appointments">
+                        <span>My Appointments</span>
+                        <ArrowRight className="h-4 w-4" />
+                    </Link>
                     </Button>
                 </CardContent>
             </Card>
-        )}
-        <Card>
-          <CardHeader>
-            <CardTitle>Book a New Appointment</CardTitle>
-            <CardDescription>Find a specialist and schedule a visit.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Need to see a doctor? Our network of specialists is ready to help you.
-            </p>
-            <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Link href="/dashboard/patient/find-doctor">
-                <PlusCircle className="mr-2 h-4 w-4" /> Book Now
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div >
-            <CardTitle>Upcoming Appointments</CardTitle>
-            <CardDescription>Here are your next scheduled appointments.</CardDescription>
-          </div>
-          <Button asChild variant="ghost">
-            <Link href="/dashboard/patient/appointments">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {upcomingAppointments.length > 0 ? (
-                upcomingAppointments.map((appt) => (
-                <div key={appt.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
-                    <div className="flex items-center gap-4">
-                    <Avatar>
-                        <AvatarImage src={appt.avatar} alt={appt.doctor} />
-                        <AvatarFallback>{appt.initials}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p className="font-semibold">{appt.doctor}</p>
-                        <p className="text-sm text-muted-foreground">{appt.specialty}</p>
-                    </div>
-                    </div>
-                    <div className="text-right">
-                    <p className="text-sm font-medium">{appt.date}</p>
-                    <p className={`text-xs font-semibold ${appt.type === 'Online' ? 'text-accent-foreground' : 'text-blue-600'}`}>{appt.type}</p>
-                    </div>
-                </div>
-                ))
-            ) : (
-                <p className="text-center text-sm text-muted-foreground py-4">No upcoming appointments found.</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            <Card className="overflow-hidden">
+                <CardHeader className="p-0">
+                    <Image src="https://placehold.co/600x400.png" width={600} height={400} alt="A doctor consulting a patient" data-ai-hint="doctor patient" />
+                </CardHeader>
+                <CardContent className="p-4">
+                    <CardTitle className="mb-2 text-lg">Your Health Journey</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                        Stay on top of your health by booking regular check-ups and following up with your specialists. Your well-being is our priority.
+                    </p>
+                </CardContent>
+            </Card>
+        </div>
     </div>
   )
 }
