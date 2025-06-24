@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, Timestamp, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, Timestamp, runTransaction, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parse, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -33,9 +33,11 @@ export default function DoctorAppointmentsPage() {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [appointmentsByDate, setAppointmentsByDate] = useState<{ [key: string]: Appointment[] }>({});
     const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
+    const [completedAppointments, setCompletedAppointments] = useState<Appointment[]>([]);
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [loading, setLoading] = useState(true);
     const [cancelling, setCancelling] = useState<string | null>(null);
+    const [completing, setCompleting] = useState<string | null>(null);
 
     const fetchAppointments = async () => {
         if (!user) return;
@@ -71,6 +73,10 @@ export default function DoctorAppointmentsPage() {
                 appt => appt.appointmentDateTime.toDate() >= now && appt.status === 'booked'
             );
             setUpcomingAppointments(upcoming);
+
+            const completed = fetchedAppointments.filter(appt => appt.status === 'completed');
+            completed.sort((a, b) => b.appointmentDateTime.toDate().getTime() - a.appointmentDateTime.toDate().getTime());
+            setCompletedAppointments(completed);
 
             const groupedAppointments = fetchedAppointments.reduce((acc, curr) => {
                 const dateStr = format(startOfDay(curr.appointmentDateTime.toDate()), 'yyyy-MM-dd');
@@ -134,6 +140,24 @@ export default function DoctorAppointmentsPage() {
         }
     };
 
+    const handleCompleteAppointment = async (appointmentId: string) => {
+        setCompleting(appointmentId);
+        const appointmentRef = doc(db, 'appointments', appointmentId);
+        try {
+            await updateDoc(appointmentRef, {
+                status: 'completed',
+                updatedAt: serverTimestamp(),
+            });
+            toast({ title: "Success", description: "Appointment marked as completed." });
+            await fetchAppointments();
+        } catch (error: any) {
+            console.error("Error completing appointment: ", error);
+            toast({ title: "Error", description: "Failed to mark appointment as completed.", variant: "destructive" });
+        } finally {
+            setCompleting(null);
+        }
+    };
+
 
     const selectedDateString = date ? format(startOfDay(date), 'yyyy-MM-dd') : '';
     const selectedAppointments = appointmentsByDate[selectedDateString] || [];
@@ -142,15 +166,27 @@ export default function DoctorAppointmentsPage() {
     if (loading) {
         return (
             <div className="grid md:grid-cols-2 gap-6 items-start">
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-8 w-3/5" />
-                        <Skeleton className="h-4 w-4/5" />
-                    </CardHeader>
-                    <CardContent className="flex justify-center">
-                        <Skeleton className="w-full h-[280px] rounded-md" />
-                    </CardContent>
-                </Card>
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <Skeleton className="h-8 w-3/5" />
+                            <Skeleton className="h-4 w-4/5" />
+                        </CardHeader>
+                        <CardContent className="flex justify-center">
+                            <Skeleton className="w-full h-[280px] rounded-md" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <Skeleton className="h-8 w-2/5" />
+                            <Skeleton className="h-4 w-3/5" />
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Skeleton className="h-20 w-full" />
+                            <Skeleton className="h-20 w-full" />
+                        </CardContent>
+                    </Card>
+                </div>
                  <div className="space-y-6">
                     <Card>
                         <CardHeader>
@@ -179,26 +215,55 @@ export default function DoctorAppointmentsPage() {
 
     return (
         <div className="grid md:grid-cols-2 gap-6 items-start">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Appointments Calendar</CardTitle>
-                    <CardDescription>Select a date to view your schedule for that day.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                    <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        modifiers={{ appointments: appointmentDates }}
-                        modifiersClassNames={{ appointments: 'bg-primary/20' }}
-                        className="rounded-md border"
-                        classNames={{
-                            day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
-                            day_today: "bg-primary text-primary-foreground"
-                        }}
-                    />
-                </CardContent>
-            </Card>
+            <div className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Appointments Calendar</CardTitle>
+                        <CardDescription>Select a date to view your schedule for that day.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            modifiers={{ appointments: appointmentDates }}
+                            modifiersClassNames={{ appointments: 'bg-primary/20' }}
+                            className="rounded-md border"
+                            classNames={{
+                                day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
+                                day_today: "bg-primary text-primary-foreground"
+                            }}
+                        />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Completed Appointments</CardTitle>
+                        <CardDescription>A record of your past consultations.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                            {completedAppointments.length > 0 ? completedAppointments.map((appt) => (
+                                <div key={appt.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar>
+                                            <AvatarImage src={appt.patientAvatar} alt={appt.patientName} />
+                                            <AvatarFallback>{appt.patientInitials}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-semibold">{appt.patientName}</p>
+                                            <p className="text-sm text-muted-foreground">{format(appt.appointmentDateTime.toDate(), "PPP")}</p>
+                                        </div>
+                                    </div>
+                                    <Badge variant="secondary">Completed</Badge>
+                                </div>
+                            )) : (
+                                <p className="text-sm text-muted-foreground text-center py-8">No completed appointments yet.</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
             <div className="space-y-6">
                 <Card>
@@ -223,27 +288,32 @@ export default function DoctorAppointmentsPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Badge variant={appt.status !== 'booked' ? 'destructive' : (appt.type === 'Online' ? 'default' : 'secondary')} className={appt.type === 'Online' && appt.status === 'booked' ? 'bg-accent text-accent-foreground' : ''}>{appt.status}</Badge>
+                                        <Badge variant={appt.status === 'cancelled' ? 'destructive' : appt.status === 'completed' ? 'secondary' : 'default'} className={appt.type === 'Online' && appt.status === 'booked' ? 'bg-accent text-accent-foreground' : ''}>{appt.status}</Badge>
                                         {appt.status === 'booked' && (
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="destructive" size="sm" disabled={cancelling === appt.id}>
-                                                        {cancelling === appt.id ? '...' : 'Cancel'}
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            This action cannot be undone. This will cancel the appointment and notify the patient.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Go Back</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleCancelAppointment(appt.id, appt.availabilitySlotId)}>Confirm Cancellation</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            <>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="destructive" size="sm" disabled={cancelling === appt.id || completing === appt.id}>
+                                                            {cancelling === appt.id ? '...' : 'Cancel'}
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will cancel the appointment and notify the patient.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Go Back</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleCancelAppointment(appt.id, appt.availabilitySlotId)}>Confirm Cancellation</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                                <Button variant="outline" size="sm" onClick={() => handleCompleteAppointment(appt.id)} disabled={completing === appt.id || cancelling === appt.id}>
+                                                    {completing === appt.id ? '...' : 'Complete'}
+                                                </Button>
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -277,25 +347,32 @@ export default function DoctorAppointmentsPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Badge variant={appt.type === 'Online' ? 'default' : 'secondary'} className={appt.type === 'Online' ? 'bg-accent text-accent-foreground' : ''}>{appt.type}</Badge>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" size="sm" disabled={cancelling === appt.id}>
-                                                    {cancelling === appt.id ? '...' : 'Cancel'}
+                                        {appt.status === 'booked' && (
+                                            <>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="destructive" size="sm" disabled={cancelling === appt.id || completing === appt.id}>
+                                                            {cancelling === appt.id ? '...' : 'Cancel'}
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will cancel the appointment and notify the patient.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Go Back</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleCancelAppointment(appt.id, appt.availabilitySlotId)}>Confirm Cancellation</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                                <Button variant="outline" size="sm" onClick={() => handleCompleteAppointment(appt.id)} disabled={completing === appt.id || cancelling === appt.id}>
+                                                    {completing === appt.id ? '...' : 'Complete'}
                                                 </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This action cannot be undone. This will cancel the appointment and notify the patient.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Go Back</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleCancelAppointment(appt.id, appt.availabilitySlotId)}>Confirm Cancellation</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )) : (
