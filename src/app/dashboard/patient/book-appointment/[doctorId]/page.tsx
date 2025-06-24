@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format, parse } from 'date-fns';
 import Image from 'next/image';
 import { CheckCircle2 } from 'lucide-react';
+import { PaymentModal } from '@/components/shared/PaymentModal';
 
 interface DoctorProfile {
     id: string;
@@ -48,7 +49,8 @@ export default function BookAppointmentPage() {
     const [reason, setReason] = useState('');
     const [type, setType] = useState<'Online' | 'In-Person'>('Online');
     const [loading, setLoading] = useState(true);
-    const [booking, setBooking] = useState(false);
+    const [isBooking, setIsBooking] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
     useEffect(() => {
         if (!doctorId) return;
@@ -128,12 +130,19 @@ export default function BookAppointmentPage() {
         return `${formattedHour}:${minute} ${suffix}`;
     }
 
-    const handleBooking = async () => {
+    const handleProceedToPayment = () => {
         if (!user || !userProfile || !selectedSlot || !reason || !type) {
             toast({ title: "Incomplete Information", description: "Please select a time slot and provide a reason for your visit.", variant: "destructive" });
             return;
         }
-        setBooking(true);
+        setIsPaymentModalOpen(true);
+    };
+
+    const handleBooking = async () => {
+        if (!user || !userProfile || !selectedSlot) {
+            throw new Error("Booking information is missing.");
+        }
+        setIsBooking(true);
 
         const availabilitySlotRef = doc(db, 'doctorAvailability', selectedSlot.id);
         const newAppointmentRef = doc(collection(db, 'appointments'));
@@ -172,11 +181,10 @@ export default function BookAppointmentPage() {
             router.push('/dashboard/patient/appointments');
         } catch (error: any) {
             console.error("Booking failed:", error);
-            toast({ title: "Booking Failed", description: error.message || "An error occurred during booking. Please try again.", variant: "destructive" });
-            setAvailability(prev => prev.filter(p => p.id !== selectedSlot.id)); // Optimistically remove booked slot
-            setSelectedSlot(null);
+            // Re-throw the error to be caught by the payment modal
+            throw error;
         } finally {
-            setBooking(false);
+            setIsBooking(false);
         }
     };
 
@@ -223,122 +231,130 @@ export default function BookAppointmentPage() {
     }
 
     return (
-        <div className="grid lg:grid-cols-5 gap-8 items-start">
-            <div className="lg:col-span-3 space-y-6">
-                <Card>
-                    <CardHeader className="flex flex-row items-center gap-4">
-                         <Avatar className="h-16 w-16">
-                            <AvatarImage src={`https://placehold.co/128x128.png`} alt={doctor?.name} />
-                            <AvatarFallback>{doctor?.name.split(' ').map(n => n[0]).join('').toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <CardTitle>Book Appointment with {doctor?.name}</CardTitle>
-                            <CardDescription>{doctor?.specialty}</CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <Label>Select a Date</Label>
-                        <div className="flex justify-center pt-2">
-                            <Calendar
-                                mode="single"
-                                selected={date}
-                                onSelect={(d) => { setDate(d); setSelectedSlot(null); }}
-                                disabled={(d) => !availableDates.some(ad => ad.getTime() === d.getTime())}
-                                modifiers={{ available: availableDates }}
-                                modifiersClassNames={{ available: 'bg-primary/20' }}
-                                className="rounded-md border"
-                                classNames={{
-                                    day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
-                                    day_today: "bg-primary text-primary-foreground"
-                                }}
-                            />
-                        </div>
-                        {date && (
-                            <div className="mt-6">
-                                <CardHeader className="p-0 mb-4">
-                                    <CardTitle>Select a Time Slot</CardTitle>
-                                    <CardDescription>Available slots for {format(date, 'MMMM d, yyyy')}</CardDescription>
-                                </CardHeader>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                                    {slotsForSelectedDate.length > 0 ? slotsForSelectedDate.map(slot => (
-                                        <Button 
-                                            key={slot.id} 
-                                            variant={selectedSlot?.id === slot.id ? 'default' : 'outline'}
-                                            className={selectedSlot?.id === slot.id ? 'bg-accent text-accent-foreground' : ''}
-                                            onClick={() => setSelectedSlot(slot)}
-                                        >
-                                            {formatTime(slot.startTime)}
-                                        </Button>
-                                    )) : <p className="text-sm text-muted-foreground col-span-full">No available slots for this day.</p>}
-                                </div>
+        <>
+            <div className="grid lg:grid-cols-5 gap-8 items-start">
+                <div className="lg:col-span-3 space-y-6">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <Avatar className="h-16 w-16">
+                                <AvatarImage src={`https://placehold.co/128x128.png`} alt={doctor?.name} />
+                                <AvatarFallback>{doctor?.name.split(' ').map(n => n[0]).join('').toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <CardTitle>Book Appointment with {doctor?.name}</CardTitle>
+                                <CardDescription>{doctor?.specialty}</CardDescription>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="lg:col-span-2 space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Your Appointment</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {doctor && <p><strong>Doctor:</strong> {doctor.name}</p>}
-                        {doctor && <p><strong>Fee:</strong> ${doctor.consultationFee}</p>}
-                        {selectedSlot && date ? (
-                            <p><strong>Time:</strong> {format(selectedSlot.date.toDate(), 'EEEE, MMMM d')} at {formatTime(selectedSlot.startTime)}</p>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">Please select a date and time.</p>
-                        )}
-                        
-                        <div className="space-y-2">
-                            <Label htmlFor="reason">Reason for Visit</Label>
-                            <Textarea id="reason" placeholder="e.g. Annual check-up, specific symptom..." value={reason} onChange={e => setReason(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Appointment Type</Label>
-                             <RadioGroup value={type} onValueChange={(value: 'Online' | 'In-Person') => setType(value)} className="flex gap-4">
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="Online" id="online" />
-                                    <Label htmlFor="online">Online</Label>
+                        </CardHeader>
+                        <CardContent>
+                            <Label>Select a Date</Label>
+                            <div className="flex justify-center pt-2">
+                                <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={(d) => { setDate(d); setSelectedSlot(null); }}
+                                    disabled={(d) => !availableDates.some(ad => ad.getTime() === d.getTime())}
+                                    modifiers={{ available: availableDates }}
+                                    modifiersClassNames={{ available: 'bg-primary/20' }}
+                                    className="rounded-md border"
+                                    classNames={{
+                                        day_selected: "bg-accent text-accent-foreground hover:bg-accent/90 focus:bg-accent/90",
+                                        day_today: "bg-primary text-primary-foreground"
+                                    }}
+                                />
+                            </div>
+                            {date && (
+                                <div className="mt-6">
+                                    <CardHeader className="p-0 mb-4">
+                                        <CardTitle>Select a Time Slot</CardTitle>
+                                        <CardDescription>Available slots for {format(date, 'MMMM d, yyyy')}</CardDescription>
+                                    </CardHeader>
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                        {slotsForSelectedDate.length > 0 ? slotsForSelectedDate.map(slot => (
+                                            <Button 
+                                                key={slot.id} 
+                                                variant={selectedSlot?.id === slot.id ? 'default' : 'outline'}
+                                                className={selectedSlot?.id === slot.id ? 'bg-accent text-accent-foreground' : ''}
+                                                onClick={() => setSelectedSlot(slot)}
+                                            >
+                                                {formatTime(slot.startTime)}
+                                            </Button>
+                                        )) : <p className="text-sm text-muted-foreground col-span-full">No available slots for this day.</p>}
+                                    </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="In-Person" id="in-person" />
-                                    <Label htmlFor="in-person">In-Person</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-                         <Button onClick={handleBooking} disabled={!selectedSlot || !reason || !type || booking} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                            {booking ? "Booking..." : "Confirm Booking"}
-                        </Button>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>How to Prepare</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-sm text-muted-foreground">
-                        <div className="flex items-start gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0"/>
-                            <span>For online visits, please ensure you have a stable internet connection.</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0"/>
-                            <span>Have a list of your current medications and any questions you have for the doctor.</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0"/>
-                            <span>You can manage this appointment from your dashboard after booking.</span>
-                        </div>
-                    </CardContent>
-                </Card>
-                 <Card className="overflow-hidden">
-                    <CardContent className="p-0">
-                        <Image src="https://placehold.co/600x400.png" width={600} height={400} alt="A welcoming doctor's office" data-ai-hint="doctor office" />
-                    </CardContent>
-                </Card>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="lg:col-span-2 space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Your Appointment</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {doctor && <p><strong>Doctor:</strong> {doctor.name}</p>}
+                            {doctor && <p><strong>Fee:</strong> ${doctor.consultationFee}</p>}
+                            {selectedSlot && date ? (
+                                <p><strong>Time:</strong> {format(selectedSlot.date.toDate(), 'EEEE, MMMM d')} at {formatTime(selectedSlot.startTime)}</p>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">Please select a date and time.</p>
+                            )}
+                            
+                            <div className="space-y-2">
+                                <Label htmlFor="reason">Reason for Visit</Label>
+                                <Textarea id="reason" placeholder="e.g. Annual check-up, specific symptom..." value={reason} onChange={e => setReason(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Appointment Type</Label>
+                                <RadioGroup value={type} onValueChange={(value: 'Online' | 'In-Person') => setType(value)} className="flex gap-4">
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="Online" id="online" />
+                                        <Label htmlFor="online">Online</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="In-Person" id="in-person" />
+                                        <Label htmlFor="in-person">In-Person</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                            <Button onClick={handleProceedToPayment} disabled={!selectedSlot || !reason || !type || isBooking} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                                {isBooking ? "Booking..." : "Proceed to Payment"}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>How to Prepare</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-sm text-muted-foreground">
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0"/>
+                                <span>For online visits, please ensure you have a stable internet connection.</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0"/>
+                                <span>Have a list of your current medications and any questions you have for the doctor.</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0"/>
+                                <span>You can manage this appointment from your dashboard after booking.</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="overflow-hidden">
+                        <CardContent className="p-0">
+                            <Image src="https://placehold.co/600x400.png" width={600} height={400} alt="A welcoming doctor's office" data-ai-hint="doctor office" />
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
-        </div>
+            {doctor && (
+                <PaymentModal 
+                    isOpen={isPaymentModalOpen}
+                    onClose={() => setIsPaymentModalOpen(false)}
+                    onConfirmBooking={handleBooking}
+                    amount={doctor.consultationFee}
+                />
+            )}
+        </>
     )
 }
-
-    
