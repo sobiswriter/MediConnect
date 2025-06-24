@@ -88,17 +88,28 @@ export default function PatientProfilePage() {
 
     if (loading) {
          return (
-            <Card className="max-w-4xl mx-auto">
-                <CardHeader><Skeleton className="h-8 w-1/4" /><Skeleton className="h-4 w-2/5 mt-2" /></CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex items-center gap-4">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-4 w-2/5 mt-2" />
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center gap-4 mb-8">
                         <Skeleton className="h-20 w-20 rounded-full" />
-                        <div className="space-y-2"><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-64" /></div>
+                        <div className="space-y-2">
+                            <Skeleton className="h-6 w-48" />
+                            <Skeleton className="h-4 w-64" />
+                        </div>
                     </div>
-                    <div className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-24 w-full" />
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
+                            <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
+                            <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
+                            <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
+                        </div>
+                        <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
+                        <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-24 w-full" /></div>
                     </div>
                 </CardContent>
             </Card>
@@ -106,14 +117,14 @@ export default function PatientProfilePage() {
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
+        <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>My Profile</CardTitle>
                     <CardDescription>Update your personal and medical information.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex items-center gap-4">
+                <CardContent>
+                    <div className="flex items-center gap-4 mb-8">
                         <Avatar className="h-20 w-20">
                             <AvatarImage src="https://placehold.co/128x128.png" alt={profile?.name || ''} />
                             <AvatarFallback>{getInitials(profile?.name || '')}</AvatarFallback>
@@ -125,8 +136,8 @@ export default function PatientProfilePage() {
                         </div>
                     </div>
                     
-                    <form onSubmit={handleSaveChanges} className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4">
+                    <form onSubmit={handleSaveChanges} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-1">
                                 <Label htmlFor="name">Full Name</Label>
                                 <Input id="name" value={profile?.name || ''} onChange={e => setProfile(p => p ? { ...p, name: e.target.value } : null)} />
