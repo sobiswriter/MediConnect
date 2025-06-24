@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -14,6 +15,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parse } from 'date-fns';
+import Image from 'next/image';
+import { CheckCircle2 } from 'lucide-react';
 
 interface DoctorProfile {
     id: string;
@@ -179,12 +182,41 @@ export default function BookAppointmentPage() {
 
     if (loading) {
         return (
-            <div className="grid lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                    <Card><CardHeader><Skeleton className="h-20 w-20 rounded-full" /></CardHeader><CardContent><div className="space-y-2"><Skeleton className="h-8 w-1/2" /><Skeleton className="h-[280px] w-full" /></div></CardContent></Card>
+            <div className="grid lg:grid-cols-5 gap-8 items-start">
+                <div className="lg:col-span-3 space-y-6">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <Skeleton className="h-16 w-16 rounded-full" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-6 w-48" />
+                                <Skeleton className="h-4 w-32" />
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-6 w-24 mb-2" />
+                            <Skeleton className="h-[280px] w-full" />
+                        </CardContent>
+                    </Card>
                 </div>
-                <div>
-                    <Card><CardHeader><Skeleton className="h-8 w-3/4" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+                <div className="lg:col-span-2 space-y-6">
+                    <Card>
+                        <CardHeader><Skeleton className="h-8 w-3/4" /></CardHeader>
+                        <CardContent className="space-y-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-20 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-16 w-full" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <Skeleton className="h-48 w-full rounded-lg" />
+                    </Card>
                 </div>
             </div>
         )
@@ -244,7 +276,7 @@ export default function BookAppointmentPage() {
                     </CardContent>
                 </Card>
             </div>
-            <div className="lg:col-span-2 sticky top-20">
+            <div className="lg:col-span-2 space-y-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>Your Appointment</CardTitle>
@@ -280,7 +312,33 @@ export default function BookAppointmentPage() {
                         </Button>
                     </CardContent>
                 </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>How to Prepare</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm text-muted-foreground">
+                        <div className="flex items-start gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0"/>
+                            <span>For online visits, please ensure you have a stable internet connection.</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0"/>
+                            <span>Have a list of your current medications and any questions you have for the doctor.</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0"/>
+                            <span>You can manage this appointment from your dashboard after booking.</span>
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card className="overflow-hidden">
+                    <CardContent className="p-0">
+                        <Image src="https://placehold.co/600x400.png" width={600} height={400} alt="A welcoming doctor's office" data-ai-hint="doctor office" />
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )
 }
+
+    
