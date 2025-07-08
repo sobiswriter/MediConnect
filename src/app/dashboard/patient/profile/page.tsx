@@ -202,7 +202,7 @@ export default function PatientProfilePage() {
              <div className="lg:col-span-1 space-y-6">
                 <Card className="overflow-hidden">
                     <CardHeader className="p-0">
-                         <Image src="https://placehold.co/600x400.png" width={600} height={400} alt="A doctor consulting a patient" data-ai-hint="doctor patient" />
+                         <Image src="/images/ODoc.png" width={600} height={400} alt="A doctor consulting a patient" data-ai-hint="doctor patient" />
                     </CardHeader>
                     <CardContent className="p-4">
                         <CardTitle className="mb-2 text-lg">Your Health Journey</CardTitle>

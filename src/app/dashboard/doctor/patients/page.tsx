@@ -163,7 +163,7 @@ export default function DoctorPatientsPage() {
                 </Card>
                 <Card className="overflow-hidden">
                     <CardHeader className="p-0">
-                         <Image src="https://placehold.co/600x400.png" width={600} height={400} alt="Doctor reviewing patient files" data-ai-hint="doctor files" />
+                         <Image src="/images/Hospital.png" width={600} height={400} alt="Doctor reviewing patient files" data-ai-hint="doctor files" />
                     </CardHeader>
                     <CardContent className="p-4">
                         <CardTitle className="mb-2 text-lg">Patient Management</CardTitle>

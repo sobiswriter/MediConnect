@@ -253,7 +253,7 @@ export default function FindDoctorPage() {
             </Card>
             <Card className="overflow-hidden">
                 <CardHeader className="p-0">
-                    <Image src="https://placehold.co/600x400.png" width={600} height={400} alt="Smiling doctor" data-ai-hint="doctor smiling" />
+                    <Image src="/images/YDoc.png" width={600} height={400} alt="Smiling doctor" data-ai-hint="doctor smiling" />
                 </CardHeader>
                 <CardContent className="p-4">
                     <CardTitle className="mb-2 text-lg">Committed to Your Care</CardTitle>

@@ -60,7 +60,7 @@ export default function LoginPage() {
         <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
             <div className="hidden lg:flex flex-col items-center justify-center bg-primary/20 p-12 text-center relative">
                  <Image
-                    src="https://placehold.co/1200x1800.png"
+                    src="/images/Hospital.png"
                     alt="A modern medical facility"
                     fill
                     className="object-cover"
